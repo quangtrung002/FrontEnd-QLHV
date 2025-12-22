@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { notificationSuccess } from "notification/notification";
 
 function getTodayISO() {
   const d = new Date();
@@ -13,7 +14,7 @@ export default function LeaveModal({
   onClose,
   onSave,
   students,
-  initialData, 
+  initialData,
 }) {
   const [form, setForm] = useState({
     userId: "",
@@ -44,7 +45,10 @@ export default function LeaveModal({
   };
 
   const handleSaveClick = () => {
-    onSave(form); 
+    onSave(form);
+    initialData
+      ? notificationSuccess("Đã cập nhật thành công")
+      : notificationSuccess("Thêm mới thành công");
   };
 
   const title = initialData

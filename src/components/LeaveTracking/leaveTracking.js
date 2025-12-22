@@ -120,6 +120,8 @@ export default function LeaveTracking() {
   const [toDateInput, setToDateInput] = useState("");
   const [dateRange, setDateRange] = useState({ from: "", to: "" });
 
+  const [sortConfig, setSortConfig] = useState({ key: "id", direction: "asc" });
+
   const openCreateModal = () => {
     setEditingLeave(null);
     setIsModalOpen(true);
@@ -211,6 +213,14 @@ export default function LeaveTracking() {
     setPage(1);
   };
 
+  const handleSort = (key) => {
+    let direction = "asc";
+    if (sortConfig.key === key && sortConfig.direction === "asc") {
+      direction = "desc";
+    }
+    setSortConfig({ key, direction });
+  };
+
   const filteredLeaves = useMemo(() => {
     let result = leaves;
 
@@ -236,8 +246,18 @@ export default function LeaveTracking() {
       });
     }
 
+    result.sort((a, b) => {
+      if (a[sortConfig.key] < b[sortConfig.key]) {
+        return sortConfig.direction === "asc" ? -1 : 1;
+      }
+      if (a[sortConfig.key] > b[sortConfig.key]) {
+        return sortConfig.direction === "asc" ? 1 : -1;
+      }
+      return 0;
+    });
+
     return result;
-  }, [leaves, search, dateRange]);
+  }, [leaves, search, dateRange, sortConfig]);
 
   const totalItems = filteredLeaves.length;
   const totalPages =
@@ -252,6 +272,61 @@ export default function LeaveTracking() {
   const handlePageChange = (newPage) => {
     if (newPage < 1 || newPage > totalPages) return;
     setPage(newPage);
+  };
+
+  const renderSortIcon = () => {
+    if (sortConfig.key !== "id") {
+      return (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-3 w-3 text-slate-300"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+          />
+        </svg>
+      );
+    }
+    if (sortConfig.direction === "asc") {
+      return (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-3 w-3 text-blue-600"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M5 15l7-7 7 7"
+          />
+        </svg>
+      );
+    }
+    return (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className="h-3 w-3 text-blue-600"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M19 9l-7 7-7-7"
+        />
+      </svg>
+    );
   };
 
   return (
@@ -272,15 +347,7 @@ export default function LeaveTracking() {
             className="h-10 w-64 rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
             placeholder="Tìm theo tên, mã, ngày, lý do nghỉ..."
           />
-          <button
-            type="button"
-            className="h-10 rounded-lg bg-blue-500 px-4 text-sm font-semibold text-white hover:bg-blue-600 transition"
-          >
-            Search
-          </button>
-        </div>
 
-        <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-2">
             <span className="text-sm">Từ ngày:</span>
             <input
@@ -302,7 +369,7 @@ export default function LeaveTracking() {
           <button
             type="button"
             onClick={handleApplyDateFilter}
-            className="h-10 rounded-lg border border-slate-300 px-4 text-sm font-semibold text-slate-700 hover:bg-yellow-300 transition"
+            className="h-10 rounded-lg border border-slate-300 bg-yellow-300 px-4 text-sm font-semibold text-slate-700 hover:bg-yellow-300 transition"
           >
             Lọc
           </button>
@@ -313,9 +380,7 @@ export default function LeaveTracking() {
           onClick={openCreateModal}
           className="flex items-center gap-2 h-10 rounded-lg !bg-emerald-600 px-4 text-sm font-semibold text-white hover:bg-emerald-700 transition"
         >
-          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/20 text-lg leading-none">
-            +
-          </span>
+          + Thêm mới
         </button>
       </div>
 
@@ -323,7 +388,16 @@ export default function LeaveTracking() {
         <table className="min-w-full text-sm">
           <thead className="bg-slate-100">
             <tr>
-              <th className="border px-3 py-2 text-left">STT</th>
+              <th
+                className="border px-3 py-2 text-center w-16 cursor-pointer hover:bg-slate-200 transition select-none group"
+                onClick={() => handleSort("id")}
+                title="Sắp xếp theo ID"
+              >
+                <div className="flex items-center justify-center gap-1">
+                  <span>STT</span>
+                  {renderSortIcon()}
+                </div>
+              </th>
               <th className="border px-3 py-2 text-left">Mã định danh</th>
               <th className="border px-3 py-2 text-left">Họ tên học viên</th>
               <th className="border px-3 py-2 text-left">Khối</th>
@@ -345,7 +419,9 @@ export default function LeaveTracking() {
             ) : (
               pageLeaves.map((l, idx) => (
                 <tr key={l.id} className="hover:bg-slate-50">
-                  <td className="border px-3 py-2">{startIndex + idx + 1}</td>
+                  <td className="border px-3 py-2 text-center text-slate-500">
+                    {l.id}
+                  </td>
                   <td className="border px-3 py-2 font-mono text-xs">
                     {l.code}
                   </td>

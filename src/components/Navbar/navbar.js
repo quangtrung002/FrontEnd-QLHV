@@ -5,9 +5,10 @@ const LOGO_URL =
   "https://res.cloudinary.com/dyjrpauvp/image/upload/v1763438525/my-profile/logo-gita-remove-background_zumb4y.png";
 
 const navItems = [
+  { label: "Trang chủ", path: "/" },
   { label: "QLHV", path: "/student-management" },
-  { label: "Học viên chính thức", path: "/official-students" },
-  { label: "Học viên trải nghiệm", path: "/trial-students" },
+  { label: "Kết quả học tập", path: "/feedback" },
+  { label: "Học sinh trải nghiệm", path: "/trial-management" },
   { label: "Điểm danh giáo viên", path: "/teacher-attendance" },
   { label: "Chấm nghỉ", path: "/leave-tracking" },
   { label: "Điểm học viên", path: "/student-scores" },
