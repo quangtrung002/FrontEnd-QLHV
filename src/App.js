@@ -12,27 +12,40 @@ import MainLayout from "components/layout";
 import LoginPage from "components/Login/login";
 import ProtectedRoute from "context/ProtectedRoute";
 import { ToastContainer } from "react-toastify";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 export default function App() {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        refetchOnWindowFocus: false,
+      },
+    },
+  });
   return (
-    <AuthProvider>
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
 
-        <Route element={<ProtectedRoute />}>
-          <Route element={<MainLayout />}>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/student-management" element={<StudentManager />} />
-            <Route path="/teacher-attendance" element={<TeacherAttendance />} />
-            <Route path="/leave-tracking" element={<LeaveTracking />} />
-            <Route path="/trial-management" element={<TrialManager />} />
-            <Route path="/student-scores" element={<StudentScores />} />
-            <Route path="/feedback" element={<Feedback />} />
+          <Route element={<ProtectedRoute />}>
+            <Route element={<MainLayout />}>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/student-management" element={<StudentManager />} />
+              <Route
+                path="/teacher-attendance"
+                element={<TeacherAttendance />}
+              />
+              <Route path="/leave-tracking" element={<LeaveTracking />} />
+              <Route path="/trial-management" element={<TrialManager />} />
+              <Route path="/student-scores" element={<StudentScores />} />
+              <Route path="/feedback" element={<Feedback />} />
+            </Route>
           </Route>
-        </Route>
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-      <ToastContainer />
-    </AuthProvider>
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+        <ToastContainer />
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }

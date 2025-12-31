@@ -1,101 +1,39 @@
-import React, { useState, useMemo } from "react";
-import users from "data-user";
+import React, { useState } from "react";
 import StudentTable from "services/table";
 import Pagination from "services/pagination";
 import StudentModal from "./StudentModal";
 import ConfirmModal from "./confirmModal";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  createStudent,
+  deleteStudent,
+  getListStudents,
+  getStudentById,
+  updateStudent,
+} from "apis/student.api";
+import useDebounce from "services/useDebounce";
+import {
+  notificationSuccess,
+  notificationError,
+} from "notification/notification";
+import { pickFields, PROFILE_FIELDS, USER_FIELDS } from "services/filterField";
 
 const ITEMS_PER_PAGE = 15;
 
 export default function StudentManager() {
-  const [allUsers, setAllUsers] = useState(() => users);
+  const queryClient = useQueryClient();
+
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-
+  const [selectedId, setSelectedId] = useState(null);
   const [gradeFilterControl, setGradeFilterControl] = useState("");
   const [statusFilterControl, setStatusFilterControl] = useState("");
-  const [filters, setFilters] = useState({ grade: "", status: "" });
-
-  const [sortConfig, setSortConfig] = useState({ key: "id", direction: "asc" });
-
-  const [modalState, setModalState] = useState({
-    isOpen: false,
-    user: null,
-    mode: "view",
-  });
-
-  const [deleteTarget, setDeleteTarget] = useState(null);
-
-  const filteredUsers = useMemo(() => {
-    let result = allUsers;
-
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      result = result.filter((u) => {
-        return (
-          u.fullName.toLowerCase().includes(q) ||
-          u.code.toLowerCase().includes(q) ||
-          u.fatherName.toLowerCase().includes(q) ||
-          u.motherName.toLowerCase().includes(q)
-        );
-      });
-    }
-
-    if (filters.grade) {
-      result = result.filter((u) => u.grade === filters.grade);
-    }
-
-    if (filters.status) {
-      result = result.filter(
-        (u) =>
-          String(u.status || "").toLowerCase() === filters.status.toLowerCase()
-      );
-    }
-
-    result.sort((a, b) => {
-      if (a[sortConfig.key] < b[sortConfig.key]) {
-        return sortConfig.direction === "asc" ? -1 : 1;
-      }
-      if (a[sortConfig.key] > b[sortConfig.key]) {
-        return sortConfig.direction === "asc" ? 1 : -1;
-      }
-      return 0;
-    });
-
-    return result;
-  }, [allUsers, search, filters, sortConfig]);
-
-  const totalItems = filteredUsers.length;
-  const totalPages =
-    totalItems > 0 ? Math.ceil(totalItems / ITEMS_PER_PAGE) : 1;
-  const currentPage = Math.min(page, totalPages);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const pageUsers = filteredUsers.slice(
-    startIndex,
-    startIndex + ITEMS_PER_PAGE
-  );
-
-  const handleSearchChange = (e) => {
-    setSearch(e.target.value);
-    setPage(1);
-  };
-
-  const handlePageChange = (newPage) => {
-    if (newPage < 1 || newPage > totalPages) return;
-    setPage(newPage);
-  };
-
-  const handleApplyFilter = () => {
-    setFilters({ grade: gradeFilterControl, status: statusFilterControl });
-    setPage(1);
-  };
+  const [filters, setFilters] = useState({ role: "Student" });
+  const [isSort, setIsSort] = useState(true);
+  const debouncedSearch = useDebounce(search.trim());
 
   const handleSort = (key) => {
-    let direction = "asc";
-    if (sortConfig.key === key && sortConfig.direction === "asc") {
-      direction = "desc";
-    }
-    setSortConfig({ key, direction });
+    setIsSort(!isSort);
   };
 
   const handleOpenCreate = () => {
@@ -103,49 +41,150 @@ export default function StudentManager() {
   };
 
   const handleOpenView = (user) => {
-    setModalState({ isOpen: true, user: user, mode: "view" });
+    setSelectedId(user.id);
+    setModalState({ isOpen: true, user: null, mode: "view" });
   };
 
   const handleOpenEdit = (user) => {
-    setModalState({ isOpen: true, user: user, mode: "edit" });
+    setSelectedId(user.id);
+    setModalState({ isOpen: true, user: null, mode: "edit" });
   };
 
   const handleCloseModal = () => {
-    setModalState((prev) => ({ ...prev, isOpen: false }));
+    setSelectedId(null);
+    setModalState((prev) => ({ ...prev, isOpen: false, user: null }));
   };
 
-  const handleSaveModal = (formData) => {
-    if (formData.id) {
-      setAllUsers((prev) =>
-        prev.map((u) => (u.id === formData.id ? { ...u, ...formData } : u))
-      );
-    } else {
-      const nextId =
-        allUsers.length > 0
-          ? Math.max(...allUsers.map((u) => u.id || 0)) + 1
-          : 1;
-      const nextCode = `GITA${String(allUsers.length + 1).padStart(4, "0")}`;
+  const { data: response, isLoading } = useQuery({
+    queryKey: ["getListStudents", page, debouncedSearch, filters, isSort],
+    queryFn: () =>
+      getListStudents({
+        filter: filters,
+        search: debouncedSearch,
+        searchFields: [
+          "username",
+          "studentProfile.fatherName",
+          "studentProfile.motherName",
+          "studentProfile.code",
+        ],
+        limit: ITEMS_PER_PAGE,
+        page: page,
+        sort: isSort ? "id" : "-id",
+      }),
+    keepPreviousData: true,
+  });
 
-      const newUser = {
-        ...formData,
-        id: nextId,
-        code: nextCode,
-        feedbacks: [],
+  const { data: studentDetail, isFetching: isFetchingDetail } = useQuery({
+    queryKey: ["getStudentById", selectedId],
+    queryFn: () => getStudentById(selectedId),
+    enabled: !!selectedId,
+  });
+
+  const { mutateAsync: createStudentMutation } = useMutation({
+    mutationFn: createStudent,
+    onSuccess: (res) => {
+      if (res.success) {
+        notificationSuccess("Thêm học viên thành công");
+        queryClient.invalidateQueries(["getListStudents"]);
+        handleCloseModal();
+      }
+    },
+  });
+
+  const { mutateAsync: updateStudentMutation } = useMutation({
+    mutationFn: updateStudent,
+    onSuccess: (res) => {
+      if (res.success) {
+        notificationSuccess("Cập nhật thông tin học viên thành công");
+        queryClient.invalidateQueries(["getListStudents"]);
+        handleCloseModal();
+      }
+    },
+  });
+
+  const { mutateAsync: deleteStudentMutation } = useMutation({
+    mutationFn: deleteStudent,
+    onSuccess: (res) => {
+      if (res.success) {
+        notificationSuccess("Xóa học viên thành công");
+        queryClient.invalidateQueries(["getListStudents"]);
+        handleCancelDelete();
+      }
+    },
+  });
+
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    user: null,
+    mode: "view",
+  });
+  const [deleteTarget, setDeleteTarget] = useState(null);
+
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+    setPage(1);
+  };
+
+  const handlePageChange = (newPage) => {
+    setPage(newPage);
+  };
+
+  const handleApplyFilter = () => {
+    const newFilters = { role: "Student" };
+    if (gradeFilterControl)
+      newFilters["studentProfile.grade"] = gradeFilterControl;
+    if (statusFilterControl)
+      newFilters["studentProfile.active"] = statusFilterControl;
+
+    setFilters(newFilters);
+    setPage(1);
+  };
+
+  const handleSaveModal = async (formData) => {
+    try {
+      const userPayload = pickFields(formData, USER_FIELDS);
+      const profilePayload = pickFields(formData, PROFILE_FIELDS);
+
+      const payload = {
+        ...userPayload,
+        studentProfile: profilePayload,
       };
 
-      setAllUsers((prev) => [...prev, newUser]);
-      setPage(1);
+      if (modalState.mode === "edit") {
+        await updateStudentMutation({
+          id: formData.id,
+          data: payload,
+        });
+      } else {
+        await createStudentMutation(payload);
+      }
+    } catch (error) {
+      notificationError(error?.msg || "Thao tác thất bại");
     }
-    handleCloseModal();
   };
 
-  const handleDelete = (user) => setDeleteTarget(user);
-  const handleConfirmDelete = () => {
-    if (!deleteTarget) return;
-    setAllUsers((prev) => prev.filter((u) => u.id !== deleteTarget.id));
-    setDeleteTarget(null);
-  };
+  const handleDelete = (id) => setDeleteTarget(id);
   const handleCancelDelete = () => setDeleteTarget(null);
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteStudentMutation(deleteTarget);
+    } catch (error) {
+      notificationError("Xóa thất bại");
+    }
+  };
+
+  const listStudents = response?.data || [];
+  const totalItems = listStudents.length || 0;
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1;
+  const currentPage = Math.min(Math.max(page, 1), totalPages);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+
+  if (isLoading) {
+    return (
+      <div className="p-8 text-center text-slate-500">Đang tải dữ liệu...</div>
+    );
+  }
 
   return (
     <div className="w-full">
@@ -182,8 +221,8 @@ export default function StudentManager() {
             className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
           >
             <option value="">Trạng thái</option>
-            <option value="chính thức">Chính thức</option>
-            <option value="trải nghiệm">Trải nghiệm</option>
+            <option value="CT">Chính thức</option>
+            <option value="TN">Trải nghiệm</option>
           </select>
 
           <button
@@ -206,9 +245,9 @@ export default function StudentManager() {
       </div>
 
       <StudentTable
-        rows={pageUsers}
+        rows={listStudents}
         startIndex={startIndex}
-        sortConfig={sortConfig}
+        sortConfig={{ key: "id", direction: isSort ? "asc" : "desc" }}
         onSort={handleSort}
         onView={handleOpenView}
         onEdit={handleOpenEdit}
@@ -225,7 +264,7 @@ export default function StudentManager() {
 
       <StudentModal
         isOpen={modalState.isOpen}
-        user={modalState.user}
+        user={studentDetail?.data}
         mode={modalState.mode}
         onClose={handleCloseModal}
         onSave={handleSaveModal}
@@ -238,7 +277,7 @@ export default function StudentManager() {
         title="Xác nhận xóa học viên"
         message={
           deleteTarget
-            ? `Bạn có chắc muốn xóa học viên "${deleteTarget.fullName}" (${deleteTarget.code})?\nHành động này không thể hoàn tác.`
+            ? `Bạn có chắc muốn xóa học viên có ID ${deleteTarget} này không?\nHành động này không thể hoàn tác.`
             : ""
         }
       />

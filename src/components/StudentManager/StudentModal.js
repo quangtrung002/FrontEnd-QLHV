@@ -1,13 +1,19 @@
 import { notificationSuccess } from "notification/notification";
 import React, { useEffect, useState } from "react";
 
+const DEFAULT_AVATAR = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+
 const initialForm = {
-  fullName: "",
+  id: null,
+  username: "",
+  email: "",
+  avatarURL: "",
+  code: "",
   grade: "",
   dob: "",
   fatherName: "",
   motherName: "",
-  status: "chính thức",
+  active: "CT",
   address: "",
   fatherPhone: "",
   motherPhone: "",
@@ -26,8 +32,28 @@ export default function StudentModal({
 
   useEffect(() => {
     if (isOpen) {
-      if (user) {
-        setForm({ ...user });
+      if (user && mode !== "create") {
+        const profile = user.studentProfile || {};
+
+        setForm({
+          id: user.id,
+          username: user.username || "",
+          email: user.email || "",
+          avatarURL: user.avatarURL || "",
+          code: profile.code || "",
+          grade: profile.grade || "",
+          dob: profile.dob ? profile.dob.split("T")[0] : "",
+          address: profile.address || "",
+          fatherName: profile.fatherName || "",
+          motherName: profile.motherName || "",
+          fatherPhone: profile.fatherPhone || "",
+          motherPhone: profile.motherPhone || "",
+          referrer: profile.referrer || "",
+          active: profile.active || "CT",
+          school: profile.school || "",
+          gender: profile.gender || "Male",
+          createdAt: user.createdAt.split("T")[0] || "",
+        });
         setCurrentMode(mode);
       } else {
         setForm(initialForm);
@@ -45,25 +71,12 @@ export default function StudentModal({
     }));
   };
 
-  const handleSubmit = () => {
-    if (!form.fullName.trim() || !form.grade.trim()) {
-      alert("Vui lòng nhập ít nhất Họ tên học viên và Khối.");
-      return;
-    }
-    onSave(form);
-    notificationSuccess(
-      currentMode === "create"
-        ? "Thêm học viên thành công!"
-        : "Cập nhật thông tin học viên thành công!"
-    );
-    onClose();
-  };
-
   const handlePrimaryAction = () => {
     if (currentMode === "view") {
       setCurrentMode("edit");
     } else {
-      handleSubmit();
+      onSave(form);
+      onClose();
     }
   };
 
@@ -84,31 +97,66 @@ export default function StudentModal({
   const isDisabled = currentMode === "view";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-full max-w-3xl rounded-lg bg-white p-6 shadow-xl">
-        <h2 className="mb-4 text-lg font-semibold">{title}</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 animate-fade-in">
+      <div className="w-full max-w-3xl rounded-lg bg-white p-6 shadow-xl max-h-[90vh] overflow-y-auto">
+        <h2 className="mb-6 text-xl font-bold text-center uppercase text-slate-700">
+          {title}
+        </h2>
+
+        <div className="mb-6 flex flex-col items-center justify-center gap-3">
+          <div className="relative group">
+            <img
+              src={form.avatarURL || DEFAULT_AVATAR}
+              alt="Avatar"
+              className="h-28 w-28 rounded-full object-cover border-4 border-slate-100 shadow-md"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = DEFAULT_AVATAR;
+              }}
+            />
+            {!isDisabled && (
+              <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 transition-opacity group-hover:opacity-100 cursor-pointer">
+                <span className="text-xs font-semibold text-white">
+                  Đổi ảnh
+                </span>
+              </div>
+            )}
+          </div>
+
+          {!isDisabled && (
+            <input
+              type="text"
+              placeholder="Dán link avatar..."
+              className="text-xs border-b border-slate-300 outline-none text-center w-48 focus:border-blue-500 text-slate-600"
+              value={form.avatarURL}
+              onChange={(e) => handleChange("avatarURL", e.target.value)}
+            />
+          )}
+        </div>
 
         <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
-          {currentMode !== "create" && (
-            <div>
-              <label className="mb-1 block font-medium">Mã định danh</label>
-              <input
-                type="text"
-                value={form.code || ""}
-                disabled
-                className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-sm outline-none text-slate-500"
-              />
-            </div>
-          )}
+          <div>
+            <label className="mb-1 block font-medium text-slate-700">
+              Mã định danh <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={form.code || ""}
+              disabled={isDisabled}
+              placeholder="CCCD"
+              onChange={(e) => handleChange("code", e.target.value)}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none disabled:bg-slate-100 disabled:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+            />
+          </div>
 
           <div>
-            <label className="mb-1 block font-medium">
+            <label className="mb-1 block font-medium text-slate-700">
               Họ và tên học viên <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
-              value={form.fullName || ""}
-              onChange={(e) => handleChange("fullName", e.target.value)}
+              value={form.username || ""}
+              onChange={(e) => handleChange("username", e.target.value)}
               disabled={isDisabled}
               placeholder="Ví dụ: Nguyễn Văn A"
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none disabled:bg-slate-100 disabled:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
@@ -116,7 +164,21 @@ export default function StudentModal({
           </div>
 
           <div>
-            <label className="mb-1 block font-medium">
+            <label className="mb-1 block font-medium text-slate-700">
+              Email <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="email"
+              value={form.email || ""}
+              onChange={(e) => handleChange("email", e.target.value)}
+              disabled={currentMode !== "create"}
+              placeholder="email@example.com"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none disabled:bg-slate-100 disabled:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block font-medium text-slate-700">
               Khối <span className="text-red-500">*</span>
             </label>
             <select
@@ -133,7 +195,24 @@ export default function StudentModal({
           </div>
 
           <div>
-            <label className="mb-1 block font-medium">Ngày sinh</label>
+            <label className="mb-1 block font-medium text-slate-700">
+              Giới tính <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={form.gender || ""}
+              onChange={(e) => handleChange("gender", e.target.value)}
+              disabled={isDisabled}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none disabled:bg-slate-100 disabled:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+            >
+              <option value="Male">Nam</option>
+              <option value="Female">Nữ</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-1 block font-medium text-slate-700">
+              Ngày sinh <span className="text-red-500">*</span>
+            </label>
             <input
               type="date"
               value={form.dob || ""}
@@ -143,12 +222,23 @@ export default function StudentModal({
             />
           </div>
 
-          <div
-            className={
-              currentMode === "create" ? "md:col-span-1" : "md:col-span-2"
-            }
-          >
-            <label className="mb-1 block font-medium">Địa chỉ</label>
+          <div>
+            <label className="mb-1 block font-medium text-slate-700">
+              Trường
+            </label>
+            <input
+              type="text"
+              value={form.school || ""}
+              onChange={(e) => handleChange("school", e.target.value)}
+              disabled={isDisabled}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none disabled:bg-slate-100 disabled:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block font-medium text-slate-700">
+              Địa chỉ
+            </label>
             <input
               type="text"
               value={form.address || ""}
@@ -159,7 +249,9 @@ export default function StudentModal({
           </div>
 
           <div>
-            <label className="mb-1 block font-medium">Họ và tên bố</label>
+            <label className="mb-1 block font-medium text-slate-700">
+              Họ và tên bố
+            </label>
             <input
               type="text"
               value={form.fatherName || ""}
@@ -170,7 +262,9 @@ export default function StudentModal({
           </div>
 
           <div>
-            <label className="mb-1 block font-medium">Số điện thoại bố</label>
+            <label className="mb-1 block font-medium text-slate-700">
+              Số điện thoại bố
+            </label>
             <input
               type="text"
               value={form.fatherPhone || ""}
@@ -181,7 +275,9 @@ export default function StudentModal({
           </div>
 
           <div>
-            <label className="mb-1 block font-medium">Họ và tên mẹ</label>
+            <label className="mb-1 block font-medium text-slate-700">
+              Họ và tên mẹ
+            </label>
             <input
               type="text"
               value={form.motherName || ""}
@@ -192,7 +288,9 @@ export default function StudentModal({
           </div>
 
           <div>
-            <label className="mb-1 block font-medium">Số điện thoại mẹ</label>
+            <label className="mb-1 block font-medium text-slate-700">
+              Số điện thoại mẹ
+            </label>
             <input
               type="text"
               value={form.motherPhone || ""}
@@ -203,20 +301,24 @@ export default function StudentModal({
           </div>
 
           <div>
-            <label className="mb-1 block font-medium">Trạng thái</label>
+            <label className="mb-1 block font-medium text-slate-700">
+              Trạng thái
+            </label>
             <select
-              value={form.status || "chính thức"}
-              onChange={(e) => handleChange("status", e.target.value)}
+              value={form.active || "CT"}
+              onChange={(e) => handleChange("active", e.target.value)}
               disabled={isDisabled}
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none disabled:bg-slate-100 disabled:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
             >
-              <option value="chính thức">Chính thức</option>
-              <option value="trải nghiệm">Trải nghiệm</option>
+              <option value="CT">Chính thức</option>
+              <option value="TN">Trải nghiệm</option>
             </select>
           </div>
 
           <div>
-            <label className="mb-1 block font-medium">Người giới thiệu</label>
+            <label className="mb-1 block font-medium text-slate-700">
+              Người giới thiệu
+            </label>
             <input
               type="text"
               value={form.referrer || ""}
@@ -225,20 +327,34 @@ export default function StudentModal({
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none disabled:bg-slate-100 disabled:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
             />
           </div>
+
+          {currentMode !== "create" && (
+            <div>
+              <label className="mb-1 block font-medium text-slate-700">
+                Ngày bắt đầu học:
+              </label>
+              <input
+                type="date"
+                value={form.createdAt}
+                disabled
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none disabled:bg-slate-100 disabled:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              />
+            </div>
+          )}
         </div>
 
-        <div className="mt-6 flex justify-end gap-2">
+        <div className="mt-8 flex justify-end gap-3 pt-4 border-t border-slate-100">
           <button
             type="button"
             onClick={onClose}
-            className="rounded border border-slate-300 px-4 py-2 text-sm hover:bg-slate-100 transition"
+            className="rounded-lg border border-slate-300 px-5 py-2.5 text-sm font-medium hover:bg-slate-50 transition text-slate-600"
           >
-            {currentMode === "view" ? "Đóng" : "Hủy"}
+            {currentMode === "view" ? "Đóng" : "Hủy bỏ"}
           </button>
           <button
             type="button"
             onClick={handlePrimaryAction}
-            className="rounded !bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition"
+            className="rounded-lg !bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition shadow-sm shadow-blue-200"
           >
             {primaryBtnLabel}
           </button>

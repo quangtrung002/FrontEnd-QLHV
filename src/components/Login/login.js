@@ -1,29 +1,42 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { useAuth } from "context/AuthContext";
+import { useMutation } from "@tanstack/react-query";
+import { loginApi } from "apis/auth";
+import {
+  notificationError,
+  notificationSuccess,
+} from "notification/notification";
 
 const LOGO_URL =
   "https://res.cloudinary.com/dyjrpauvp/image/upload/v1763434183/my-profile/logo-gita_n5aq7y.jpg";
 
 export default function LoginPage() {
-  const [account, setAccount] = useState("");
-  const [password, setPassword] = useState("");
+  const refEmail = useRef(null);
+  const refPassword = useRef(null);
   const [remember, setRemember] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const {login} = useAuth();
 
-  const { login } = useAuth();
-
-  const handleSubmit = (e) => {
+  const { mutateAsync: mutateLogin } = useMutation({
+    mutationFn: loginApi,
+    onSuccess: ({ data: res }) => {
+      localStorage.clear();
+      localStorage.setItem("access_token", res.access_token);
+      localStorage.setItem("refresh_token", res.refresh_token);
+      localStorage.setItem("user", JSON.stringify(res.user));
+      localStorage.setItem("isLoggedIn", true);
+      notificationSuccess("Đăng nhập thành công!");
+      login()
+    },
+  });
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (account === "admin" && password === "123456") {
-      login({
-        id: 1,
-        username: account,
-        name: "Quản trị viên",
-        role: "admin",
-      });
+    const email = refEmail.current?.value;
+    const password = refPassword.current?.value;
+    if (!email || !password) {
+      notificationError("Vui lòng nhập đầy đủ thông tin");
     } else {
-      alert("Đăng nhập thất bại! Vui lòng thử: admin / 123456");
+      await mutateLogin({ email, password });
     }
   };
 
@@ -64,11 +77,10 @@ export default function LoginPage() {
                       <path d="M20 4H4C2.897 4 2 4.897 2 6V18C2 19.103 2.897 20 4 20H20C21.103 20 22 19.103 22 18V6C22 4.897 21.103 4 20 4ZM20 8.236L12 13L4 8.236V6L12 10.764L20 6V8.236Z" />
                     </svg>
                     <input
-                      type="text"
+                      type="email"
                       className="flex-1 bg-transparent text-sm text-slate-700 placeholder:text-slate-300 outline-none"
-                      placeholder="Tài khoản (admin)"
-                      value={account}
-                      onChange={(e) => setAccount(e.target.value)}
+                      placeholder="Email"
+                      ref={refEmail}
                     />
                   </div>
 
@@ -84,9 +96,8 @@ export default function LoginPage() {
                     <input
                       type={showPassword ? "text" : "password"}
                       className="flex-1 bg-transparent text-sm text-slate-700 placeholder:text-slate-300 outline-none"
-                      placeholder="Mật khẩu (123456)"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Mật khẩu"
+                      ref={refPassword}
                     />
 
                     <button
