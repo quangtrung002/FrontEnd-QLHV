@@ -3,20 +3,12 @@ import TdGrade from "services/tdGrade"; // Giữ nguyên import của bạn
 
 export default function ScoreTable({
   rows,
-  sortConfig,
   onSort,
   onEdit,
   calculateSummary,
 }) {
   const renderSortIcon = () => {
-    if (sortConfig.key !== "id") {
-      return (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-blue-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-        </svg>
-      );
-    }
-    return sortConfig.direction === "asc" ? (
+    return true ? (
       <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
       </svg>
@@ -34,11 +26,11 @@ export default function ScoreTable({
           <tr className="bg-blue-500 text-white text-xs">
             <th
               className="px-3 py-2 border-b border-blue-600 text-center cursor-pointer hover:bg-blue-600 select-none group w-16"
-              onClick={() => onSort("id")}
+              onClick={onSort}
               title="Sắp xếp theo ID"
             >
               <div className="flex items-center justify-center gap-1">
-                <span>STT</span>
+                <span>ID</span>
                 {renderSortIcon()}
               </div>
             </th>
@@ -61,8 +53,8 @@ export default function ScoreTable({
           ) : (
             rows.map((row) => (
               <tr key={row.id} className="hover:bg-slate-50 transition-colors">
-                <td className="px-3 py-2 border-b border-slate-200 text-center text-slate-500">{row.id}</td>
-                <td className="px-3 py-2 border-b border-slate-200">{row.fullName}</td>
+                <td className="px-3 py-2 border-b border-slate-200 text-center text-slate-500">{row.studentId}</td>
+                <td className="px-3 py-2 border-b border-slate-200">{row.username}</td>
                 <TdGrade str={row.grade} cssInput="text-center" />
                 <td className="px-3 py-2 border-b border-slate-200 text-center">{row.mid ? row.mid : 0}</td>
                 <td className="px-3 py-2 border-b border-slate-200 text-center">{row.gita ? row.gita : 0}</td>

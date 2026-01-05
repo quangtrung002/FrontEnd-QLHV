@@ -1,119 +1,102 @@
 import React, { useState, useMemo } from "react";
-import users from "data-user";
 import Pagination from "services/pagination";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import ScoreToolbar from "./ScoreToolbar";
 import ScoreTable from "./ScoreTable";
 import ScoreEditModal from "./ScoreEditModal";
+
+
 import {
   notificationSuccess,
   notificationError,
-  notificationWarning,
 } from "notification/notification";
+import { getListStudentScore, updateStudentScore } from "apis/student.api";
 
 const ITEMS_PER_PAGE = 15;
 
 export default function StudentScores() {
-  const [termControl, setTermControl] = useState("1_2025_2026");
-  const [context, setContext] = useState({
-    year: "2025-2026",
+  const queryClient = useQueryClient();
+  const [filter, setFilter] = useState({
+    grade: "",
     term: "1_2025_2026",
-  });
-  const [rows, setRows] = useState(() =>
-    users.map((u, index) => ({
-      id: u.id ?? index + 1,
-      fullName: u.fullName,
-      grade: u.grade,
-      mid: "",
-      gita: "",
-      final: "",
-      summary: "",
-    }))
-  );
-  const [filterGrade, setFilterGrade] = useState("");
-  const [sortConfig, setSortConfig] = useState({ key: "id", direction: "asc" });
+  })
+  const [isSort, setIsSort] = useState(true)
+  
   const [page, setPage] = useState(1);
-  const [editingRow, setEditingRow] = useState(null); 
+  const [editingRow, setEditingRow] = useState(null);
 
-  const uniqueGrades = useMemo(() => {
-    const grades = rows.map((r) => r.grade);
-    return [...new Set(grades)].sort((a, b) => a - b);
-  }, [rows]);
+  const { 
+    data: response,
+    isLoading, 
+    isError 
+  } = useQuery({
+    queryKey: ["studentScores", filter],
+    queryFn: () => getListStudentScore({term: filter.term, grade: filter.grade}),
+    keepPreviousData: true,
+    refetchOnWindowFocus: false,
+  });
 
-  const processedRows = useMemo(() => {
-    let result = rows;
-    if (filterGrade) {
-      result = result.filter((r) => String(r.grade) === String(filterGrade));
-    }
-    result.sort((a, b) => {
-      if (a[sortConfig.key] < b[sortConfig.key])
-        return sortConfig.direction === "asc" ? -1 : 1;
-      if (a[sortConfig.key] > b[sortConfig.key])
-        return sortConfig.direction === "asc" ? 1 : -1;
-      return 0;
-    });
-    return result;
-  }, [rows, filterGrade, sortConfig]);
+  const students = response?.data || [];
 
-  // Pagination Logic
-  const totalItems = processedRows.length;
-  const totalPages =
-    totalItems > 0 ? Math.ceil(totalItems / ITEMS_PER_PAGE) : 1;
+  const { mutateAsync : updateStudentScoreMutation } = useMutation({
+    mutationFn: (data) => updateStudentScore(data),
+    onSuccess: () => {
+      notificationSuccess("Cập nhật điểm thành công!");
+      queryClient.invalidateQueries(["studentScores", filter.term]);
+      setEditingRow(null);
+    },
+    onError: (error) => {
+      notificationError("Có lỗi xảy ra khi lưu dữ liệu.");
+    },
+  });
+
+  const totalItems = students.length;
+  const totalPages = totalItems > 0 ? Math.ceil(totalItems / ITEMS_PER_PAGE) : 1;
   const safePage = Math.min(Math.max(page, 1), totalPages);
   const startIndex = (safePage - 1) * ITEMS_PER_PAGE;
-  const pageRows = processedRows.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const pageRows = students.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
-  // Helper Functions
   const calculateSummary = (mid, gita, final) => {
+    if (mid === "" || mid === null || gita === "" || gita === null || final === "" || final === null) return 0;
     const val = (+mid + +gita + +final) / 3;
     return isNaN(val) ? 0 : val.toFixed(1);
   };
 
-  const handleApplyContext = () => {
-    setContext({ term: termControl });
-    setPage(1);
-    notificationSuccess(`Đã chuyển sang dữ liệu ${termControl}`);
-  };
+  const handleChangeFilter = (key, val) => {
+    setFilter((prev) => ({
+      ...prev,
+      [key]: val,
+    }));
+  }
 
-  const handleFilterGradeChange = (val) => {
-    setFilterGrade(val);
-    setPage(1);
-  };
+  console.log(editingRow
 
-  const handleSort = (key) => {
-    let direction = "asc";
-    if (sortConfig.key === key && sortConfig.direction === "asc") {
-      direction = "desc";
-    }
-    setSortConfig({ key, direction });
-  };
+  )
+
+  const handleSort = () => setIsSort(!isSort);
 
   const handleSaveScore = (updatedRow) => {
     if (
-      updatedRow.mid < 0 ||
-      updatedRow.mid > 10 ||
-      updatedRow.gita < 0 ||
-      updatedRow.gita > 10 ||
-      updatedRow.final < 0 ||
-      updatedRow.final > 10
+      updatedRow.mid < 0 || updatedRow.mid > 10 ||
+      updatedRow.gita < 0 || updatedRow.gita > 10 ||
+      updatedRow.final < 0 || updatedRow.final > 10
     ) {
       notificationError("Điểm số không hợp lệ (phải từ 0 - 10)");
       return;
     }
 
-    try {
-      setRows((prev) =>
-        prev.map((r) => (r.id === updatedRow.id ? updatedRow : r))
-      );
-      notificationSuccess(
-        `Cập nhật điểm cho ${updatedRow.fullName} thành công!`
-      );
-      setEditingRow(null);
-    } catch (error) {
-      console.error(error);
-      notificationError("Có lỗi xảy ra khi lưu dữ liệu.");
-    }
+    updateStudentScoreMutation({
+      id: editingRow.enrollmentId,
+      data: {
+        mid_score: updatedRow.mid === "" ? null : +updatedRow.mid,
+        gita_score: updatedRow.gita === "" ? null : +updatedRow.gita,
+        final_score: updatedRow.final === "" ? null : +updatedRow.final,
+      },
+    });
   };
+
+  if (isError) return <div className="text-red-500 text-center mt-10">Lỗi không tải được dữ liệu!</div>;
 
   return (
     <div className="w-full">
@@ -122,22 +105,21 @@ export default function StudentScores() {
       </h1>
 
       <ScoreToolbar
-        termControl={termControl}
-        setTermControl={setTermControl}
-        onApply={handleApplyContext}
-        filterGrade={filterGrade}
-        setFilterGrade={handleFilterGradeChange}
-        uniqueGrades={uniqueGrades}
-        contextTerm={context.term}
+        term ={filter.term}
+        grade={filter.grade}
+        handleChangeFilter={handleChangeFilter}
       />
 
-      <ScoreTable
-        rows={pageRows}
-        sortConfig={sortConfig}
-        onSort={handleSort}
-        onEdit={(row) => setEditingRow(row)}
-        calculateSummary={calculateSummary}
-      />
+      {isLoading ? (
+        <div className="text-center py-10 text-slate-500">Đang tải dữ liệu...</div>
+      ) : (
+        <ScoreTable
+          rows={pageRows}
+          onSort={handleSort}
+          onEdit={(row) => setEditingRow(row)}
+          calculateSummary={calculateSummary}
+        />
+      )}
 
       <Pagination
         totalItems={totalItems}
@@ -150,7 +132,7 @@ export default function StudentScores() {
       <ScoreEditModal
         isOpen={!!editingRow}
         initialData={editingRow}
-        term={context.term}
+        term={filter.term}
         onClose={() => setEditingRow(null)}
         onSave={handleSaveScore}
         calculateSummary={calculateSummary}

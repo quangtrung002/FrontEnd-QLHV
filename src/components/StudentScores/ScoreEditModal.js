@@ -34,7 +34,7 @@ export default function ScoreEditModal({ isOpen, initialData, term, onClose, onS
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="w-full max-w-xl rounded-lg bg-white p-6 shadow-xl">
         <h2 className="mb-2 text-lg font-semibold">
-          Nhập điểm cho: {formData.fullName} – {formData.grade}
+          Nhập điểm cho: {formData.username} – {formData.grade}
         </h2>
         <p className="mb-4 text-xs text-slate-600">Học kì {term}</p>
 
