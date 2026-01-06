@@ -70,10 +70,6 @@ export default function StudentScores() {
     }));
   }
 
-  console.log(editingRow
-
-  )
-
   const handleSort = () => setIsSort(!isSort);
 
   const handleSaveScore = (updatedRow) => {

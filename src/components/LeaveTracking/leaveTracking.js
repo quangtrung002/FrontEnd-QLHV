@@ -1,191 +1,101 @@
-import React, { useMemo, useState } from "react";
-import users from "data-user";
+import React, { useState } from "react";
 import Pagination from "services/pagination";
 import LeaveModal from "./leaveModal";
 import ConfirmModal from "./confirmModal";
 import TdGrade from "services/tdGrade";
-
-const initialLeaves = [
-  {
-    id: 1,
-    userId: 1,
-    studentName: "Trần Minh Khoa",
-    code: "GITA0001",
-    grade: "Lớp 8",
-    date: "2025-10-01",
-    reason: "Ốm, xin nghỉ 1 buổi để đi khám bệnh",
-  },
-  {
-    id: 2,
-    userId: 3,
-    studentName: "Vũ Đức Long",
-    code: "GITA0003",
-    grade: "Lớp 8",
-    date: "2025-10-03",
-    reason: "Đi đám cưới người thân ở quê",
-  },
-  {
-    id: 3,
-    userId: 5,
-    studentName: "Đặng Khánh Huyền",
-    code: "GITA0005",
-    grade: "Lớp 7",
-    date: "2025-10-04",
-    reason: "Bị sốt, bác sĩ dặn nghỉ ngơi",
-  },
-  {
-    id: 4,
-    userId: 8,
-    studentName: "Ngô Thị Mai",
-    code: "GITA0008",
-    grade: "Lớp 3",
-    date: "2025-10-06",
-    reason: "Về quê làm giấy tờ với gia đình",
-  },
-  {
-    id: 5,
-    userId: 10,
-    studentName: "Lý Mỹ Duyên",
-    code: "GITA0010",
-    grade: "Lớp 9",
-    date: "2025-10-07",
-    reason: "Tham gia thi văn nghệ cấp trường",
-  },
-  {
-    id: 6,
-    userId: 12,
-    studentName: "Phạm Minh Hiếu",
-    code: "GITA0012",
-    grade: "Lớp 8",
-    date: "2025-10-10",
-    reason: "Đi khám mắt định kỳ",
-  },
-  {
-    id: 7,
-    userId: 15,
-    studentName: "Nguyễn Văn A",
-    code: "GITA0015",
-    grade: "Lớp 1",
-    date: "2025-10-11",
-    reason: "Bận đi du lịch với gia đình",
-  },
-  {
-    id: 8,
-    userId: 18,
-    studentName: "Nguyễn Thị Thu Trang",
-    code: "GITA0018",
-    grade: "Lớp 6",
-    date: "2025-10-13",
-    reason: "Đau bụng, xin nghỉ 1 buổi",
-  },
-  {
-    id: 9,
-    userId: 21,
-    studentName: "Hoàng Gia Bảo",
-    code: "GITA0021",
-    grade: "Lớp 4",
-    date: "2025-10-15",
-    reason: "Đi thi cờ vua cấp quận",
-  },
-  {
-    id: 10,
-    userId: 25,
-    studentName: "Lê Hải Nam",
-    code: "GITA0025",
-    grade: "Lớp 5",
-    date: "2025-10-18",
-    reason: "Bị tai nạn nhẹ, nghỉ để theo dõi thêm",
-  },
-];
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  createLeaveRequest,
+  deleteLeaveRequest,
+  getListLeaveRequests,
+  getListStudentDropList,
+} from "apis/student.api";
+import useDebounce from "services/useDebounce";
+import {
+  notificationError,
+  notificationSuccess,
+  notificationWarning,
+} from "notification/notification";
+import { renderSortIcon } from "services/render_icon";
 
 const ITEMS_PER_PAGE = 10;
 
-function getTodayISO() {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
 export default function LeaveTracking() {
-  const [allUsers] = useState(() => users);
-  const [leaves, setLeaves] = useState(initialLeaves);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingLeave, setEditingLeave] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [fromDateInput, setFromDateInput] = useState("");
   const [toDateInput, setToDateInput] = useState("");
-  const [dateRange, setDateRange] = useState({ from: "", to: "" });
+  const [filterDate, setFilterDate] = useState({ startDate: "", endDate: "" });
 
-  const [sortConfig, setSortConfig] = useState({ key: "id", direction: "asc" });
+  const searchDebouced = useDebounce(search, 1000);
+  const [isSort, setIsSort] = useState(true);
+  const queryClient = useQueryClient();
+
+  const { data: response } = useQuery({
+    queryKey: ["leaveRequestStudent", filterDate, searchDebouced, page, isSort],
+    queryFn: () =>
+      getListLeaveRequests({
+        sort: isSort ? "id" : "-id",
+        page,
+        limit: ITEMS_PER_PAGE,
+        search: searchDebouced,
+        filter: filterDate,
+      }),
+  });
+
+  const { data: result } = useQuery({
+    queryKey: "allStudentDropList",
+    queryFn: () => getListStudentDropList(),
+  });
+
+  const { mutateAsync: createLeaveRequestMutation } = useMutation({
+    mutationFn: createLeaveRequest,
+    onSuccess: (res) => {
+      if (res.success) {
+        notificationSuccess("Thêm lý do thành công!");
+        queryClient.invalidateQueries({ queryKey: ["leaveRequestStudent"] });
+      }
+    },
+    onError: (res) => {
+      if (!res.success) {
+        notificationError(res.msg);
+      }
+    },
+  });
+
+  const { mutateAsync: deleteLeaveRequestMutation } = useMutation({
+    mutationFn: deleteLeaveRequest,
+    onSuccess: (res) => {
+      if (res.success) {
+        notificationSuccess("Xóa thành công!");
+        queryClient.invalidateQueries({ queryKey: ["leaveRequestStudent"] });
+      }
+    },
+    onError: (res) => {
+      if (!res.success) {
+        notificationError(res.msg);
+      }
+    },
+  });
+
+  const leaves = response?.data || [];
+  const allUsers = result?.data || [];
 
   const openCreateModal = () => {
-    setEditingLeave(null);
-    setIsModalOpen(true);
-  };
-
-  const openEditModal = (leave) => {
-    setEditingLeave(leave);
     setIsModalOpen(true);
   };
 
   const closeLeaveModal = () => {
     setIsModalOpen(false);
-    setEditingLeave(null);
   };
 
   const handleSaveFromModal = (form) => {
     const { userId, date, reason } = form;
-
-    if (!userId) {
-      alert("Vui lòng chọn học viên.");
-      return;
-    }
-    if (!date) {
-      alert("Vui lòng chọn ngày nghỉ.");
-      return;
-    }
-    if (!reason.trim()) {
-      alert("Vui lòng nhập lý do nghỉ.");
-      return;
-    }
-
-    const student = allUsers.find((u) => String(u.id) === String(userId));
-    if (!student) {
-      alert("Không tìm thấy học viên.");
-      return;
-    }
-
-    if (editingLeave) {
-      const updated = {
-        ...editingLeave,
-        userId: student.id,
-        studentName: student.fullName,
-        code: student.code,
-        grade: student.grade,
-        date,
-        reason: reason.trim(),
-      };
-
-      setLeaves((prev) =>
-        prev.map((l) => (l.id === editingLeave.id ? updated : l))
-      );
-    } else {
-      const newLeave = {
-        id: Date.now(),
-        userId: student.id,
-        studentName: student.fullName,
-        code: student.code,
-        grade: student.grade,
-        date,
-        reason: reason.trim(),
-      };
-      setLeaves((prev) => [...prev, newLeave]);
-      setPage(1);
-    }
+    if ((userId, date, reason)) {
+      createLeaveRequestMutation({ userId: +userId, date, reason });
+    } else notificationWarning("Vui lòng nhập đầy đủ thông tin!");
 
     closeLeaveModal();
   };
@@ -196,7 +106,7 @@ export default function LeaveTracking() {
 
   const handleConfirmDelete = () => {
     if (!deleteTarget) return;
-    setLeaves((prev) => prev.filter((l) => l.id !== deleteTarget.id));
+    deleteLeaveRequestMutation(deleteTarget.id);
     setDeleteTarget(null);
   };
 
@@ -206,127 +116,25 @@ export default function LeaveTracking() {
 
   const handleApplyDateFilter = () => {
     if (fromDateInput && toDateInput && fromDateInput > toDateInput) {
-      alert("Ngày bắt đầu không được lớn hơn ngày kết thúc.");
+      notificationWarning("Ngày bắt đầu không được lớn hơn ngày kết thúc.");
       return;
     }
-    setDateRange({ from: fromDateInput, to: toDateInput });
+    setFilterDate({ startDate: fromDateInput, endDate: toDateInput });
     setPage(1);
   };
 
-  const handleSort = (key) => {
-    let direction = "asc";
-    if (sortConfig.key === key && sortConfig.direction === "asc") {
-      direction = "desc";
-    }
-    setSortConfig({ key, direction });
-  };
+  const handleSort = () => setIsSort(!isSort);
 
-  const filteredLeaves = useMemo(() => {
-    let result = leaves;
-
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      result = result.filter((l) => {
-        return (
-          l.studentName.toLowerCase().includes(q) ||
-          l.code.toLowerCase().includes(q) ||
-          l.grade.toLowerCase().includes(q) ||
-          l.date.toLowerCase().includes(q) ||
-          l.reason.toLowerCase().includes(q)
-        );
-      });
-    }
-
-    if (dateRange.from || dateRange.to) {
-      result = result.filter((l) => {
-        const d = l.date;
-        if (dateRange.from && d < dateRange.from) return false;
-        if (dateRange.to && d > dateRange.to) return false;
-        return true;
-      });
-    }
-
-    result.sort((a, b) => {
-      if (a[sortConfig.key] < b[sortConfig.key]) {
-        return sortConfig.direction === "asc" ? -1 : 1;
-      }
-      if (a[sortConfig.key] > b[sortConfig.key]) {
-        return sortConfig.direction === "asc" ? 1 : -1;
-      }
-      return 0;
-    });
-
-    return result;
-  }, [leaves, search, dateRange, sortConfig]);
-
-  const totalItems = filteredLeaves.length;
+  const totalItems = leaves.length;
   const totalPages =
     totalItems > 0 ? Math.ceil(totalItems / ITEMS_PER_PAGE) : 1;
   const currentPage = Math.min(page, totalPages);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const pageLeaves = filteredLeaves.slice(
-    startIndex,
-    startIndex + ITEMS_PER_PAGE
-  );
+  const pageLeaves = leaves.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   const handlePageChange = (newPage) => {
     if (newPage < 1 || newPage > totalPages) return;
     setPage(newPage);
-  };
-
-  const renderSortIcon = () => {
-    if (sortConfig.key !== "id") {
-      return (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-3 w-3 text-slate-300"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
-          />
-        </svg>
-      );
-    }
-    if (sortConfig.direction === "asc") {
-      return (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-3 w-3 text-blue-600"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M5 15l7-7 7 7"
-          />
-        </svg>
-      );
-    }
-    return (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="h-3 w-3 text-blue-600"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M19 9l-7 7-7-7"
-        />
-      </svg>
-    );
   };
 
   return (
@@ -387,23 +195,22 @@ export default function LeaveTracking() {
       <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
         <table className="min-w-full text-sm">
           <thead className="bg-slate-100">
-            <tr>
+            <tr className="bg-blue-500 text-white text-xs">
               <th
                 className="border px-3 py-2 text-center w-16 cursor-pointer hover:bg-slate-200 transition select-none group"
-                onClick={() => handleSort("id")}
+                onClick={handleSort}
                 title="Sắp xếp theo ID"
               >
                 <div className="flex items-center justify-center gap-1">
                   <span>STT</span>
-                  {renderSortIcon()}
+                  {renderSortIcon(isSort)}
                 </div>
               </th>
-              <th className="border px-3 py-2 text-left">Mã định danh</th>
               <th className="border px-3 py-2 text-left">Họ tên học viên</th>
-              <th className="border px-3 py-2 text-left">Khối</th>
-              <th className="border px-3 py-2 text-left">Ngày nghỉ</th>
+              <th className="border px-3 py-2 text-center">Khối</th>
+              <th className="border px-3 py-2 text-center">Ngày nghỉ</th>
               <th className="border px-3 py-2 text-left">Lý do nghỉ</th>
-              <th className="border px-3 py-2 text-left">Action</th>
+              <th className="border px-3 py-2 text-center">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -420,56 +227,34 @@ export default function LeaveTracking() {
               pageLeaves.map((l, idx) => (
                 <tr key={l.id} className="hover:bg-slate-50">
                   <td className="border px-3 py-2 text-center text-slate-500">
-                    {l.id}
+                    {idx + 1}
                   </td>
-                  <td className="border px-3 py-2 font-mono text-xs">
-                    {l.code}
+                  <td className="border px-3 py-2">{l.student_username}</td>
+                  <TdGrade str={l.grade} cssInput="text-center" />
+                  <td className="border px-3 py-2 text-center">
+                    {l.date.split("T")[0]}
                   </td>
-                  <td className="border px-3 py-2">{l.studentName}</td>
-                  <TdGrade str={l.grade} />
-                  <td className="border px-3 py-2">{l.date}</td>
                   <td className="border px-3 py-2">{l.reason}</td>
-                  <td className="border px-3 py-2">
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => openEditModal(l)}
-                        className="p-1 rounded hover:bg-slate-100"
-                        title="Sửa"
+                  <td className="border px-3 py-2 text-center">
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteClick(l)}
+                      className="p-1 rounded hover:bg-slate-100"
+                      title="Xóa"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4 text-red-600"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={1.5}
                       >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-4 w-4 text-amber-600"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth={1.5}
-                        >
-                          <path d="M16.862 4.487 19.5 7.125m-2.638-2.638-8.508 8.508a4.5 4.5 0 0 0-1.2 2.164L6 18l2.841-.154a4.5 4.5 0 0 0 2.164-1.2l8.508-8.508-2.651-2.651Z" />
-                          <path d="M19.5 14.25V19.5A1.5 1.5 0 0 1 18 21H4.5A1.5 1.5 0 0 1 3 19.5V6A1.5 1.5 0 0 1 4.5 4.5H9.75" />
-                        </svg>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteClick(l)}
-                        className="p-1 rounded hover:bg-slate-100"
-                        title="Xóa"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-4 w-4 text-red-600"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth={1.5}
-                        >
-                          <path d="M6 7.5h12" />
-                          <path d="M9.75 4.5h4.5L15 6H9l.75-1.5Z" />
-                          <path d="M8.25 7.5 9 19.5h6l.75-12" />
-                        </svg>
-                      </button>
-                    </div>
+                        <path d="M6 7.5h12" />
+                        <path d="M9.75 4.5h4.5L15 6H9l.75-1.5Z" />
+                        <path d="M8.25 7.5 9 19.5h6l.75-12" />
+                      </svg>
+                    </button>
                   </td>
                 </tr>
               ))
@@ -491,7 +276,6 @@ export default function LeaveTracking() {
         onClose={closeLeaveModal}
         onSave={handleSaveFromModal}
         students={allUsers}
-        initialData={editingLeave}
       />
 
       <ConfirmModal
@@ -501,7 +285,9 @@ export default function LeaveTracking() {
         title="Xác nhận xóa ngày nghỉ"
         message={
           deleteTarget
-            ? `Bạn có chắc muốn xóa ngày nghỉ của "${deleteTarget.studentName}" vào ngày ${deleteTarget.date}?\nHành động này không thể hoàn tác.`
+            ? `Bạn có chắc muốn xóa ngày nghỉ của "${
+                deleteTarget.student_username
+              }" vào ngày ${deleteTarget.date.split("T")[0]}`
             : ""
         }
         confirmLabel="Xóa"

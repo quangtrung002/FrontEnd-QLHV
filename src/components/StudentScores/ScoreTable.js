@@ -1,20 +1,37 @@
 import React from "react";
 import TdGrade from "services/tdGrade"; // Giữ nguyên import của bạn
 
-export default function ScoreTable({
-  rows,
-  onSort,
-  onEdit,
-  calculateSummary,
-}) {
+export default function ScoreTable({ rows, onSort, onEdit, calculateSummary }) {
   const renderSortIcon = () => {
     return true ? (
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className="h-3 w-3 text-white"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M5 15l7-7 7 7"
+        />
       </svg>
     ) : (
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className="h-3 w-3 text-white"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M19 9l-7 7-7-7"
+        />
       </svg>
     );
   };
@@ -30,17 +47,31 @@ export default function ScoreTable({
               title="Sắp xếp theo ID"
             >
               <div className="flex items-center justify-center gap-1">
-                <span>ID</span>
+                <span>STT</span>
                 {renderSortIcon()}
               </div>
             </th>
-            <th className="px-3 py-2 border-b border-blue-600 text-left">Họ và tên</th>
-            <th className="px-3 py-2 border-b border-blue-600 text-center">Khối</th>
-            <th className="px-3 py-2 border-b border-blue-600 text-center">Giữa kì</th>
-            <th className="px-3 py-2 border-b border-blue-600 text-center">Điểm GITA</th>
-            <th className="px-3 py-2 border-b border-blue-600 text-center">Cuối kì</th>
-            <th className="px-3 py-2 border-b border-blue-600 text-center">Tổng kết</th>
-            <th className="px-3 py-2 border-b border-blue-600 text-center">Action</th>
+            <th className="px-3 py-2 border-b border-blue-600 text-left">
+              Họ và tên
+            </th>
+            <th className="px-3 py-2 border-b border-blue-600 text-center">
+              Khối
+            </th>
+            <th className="px-3 py-2 border-b border-blue-600 text-center">
+              Giữa kì
+            </th>
+            <th className="px-3 py-2 border-b border-blue-600 text-center">
+              Điểm GITA
+            </th>
+            <th className="px-3 py-2 border-b border-blue-600 text-center">
+              Cuối kì
+            </th>
+            <th className="px-3 py-2 border-b border-blue-600 text-center">
+              Tổng kết
+            </th>
+            <th className="px-3 py-2 border-b border-blue-600 text-center">
+              Action
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -51,14 +82,24 @@ export default function ScoreTable({
               </td>
             </tr>
           ) : (
-            rows.map((row) => (
+            rows.map((row, idx) => (
               <tr key={row.id} className="hover:bg-slate-50 transition-colors">
-                <td className="px-3 py-2 border-b border-slate-200 text-center text-slate-500">{row.studentId}</td>
-                <td className="px-3 py-2 border-b border-slate-200">{row.username}</td>
+                <td className="px-3 py-2 border-b border-slate-200 text-center text-slate-500">
+                  {idx + 1}
+                </td>
+                <td className="px-3 py-2 border-b border-slate-200">
+                  {row.username}
+                </td>
                 <TdGrade str={row.grade} cssInput="text-center" />
-                <td className="px-3 py-2 border-b border-slate-200 text-center">{row.mid ? row.mid : 0}</td>
-                <td className="px-3 py-2 border-b border-slate-200 text-center">{row.gita ? row.gita : 0}</td>
-                <td className="px-3 py-2 border-b border-slate-200 text-center">{row.final ? row.final : 0}</td>
+                <td className="px-3 py-2 border-b border-slate-200 text-center">
+                  {row.mid ? row.mid : 0}
+                </td>
+                <td className="px-3 py-2 border-b border-slate-200 text-center">
+                  {row.gita ? row.gita : 0}
+                </td>
+                <td className="px-3 py-2 border-b border-slate-200 text-center">
+                  {row.final ? row.final : 0}
+                </td>
                 <td className="px-3 py-2 border-b border-slate-200 text-center font-bold text-blue-600">
                   {calculateSummary(row.mid, row.gita, row.final)}
                 </td>

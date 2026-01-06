@@ -6,8 +6,12 @@ const path = {
   createStudent: "admin/students",
   updateStudent: "admin/students/",
   deleteStudent: "admin/users/lock",
-  getListStudentScore : "admin/students/scores",
-  updateStudentScore : "admin/students/scores/"
+  getListStudentScore : "admin/students/scores", //API điểm học sinh
+  updateStudentScore : "admin/students/scores/",
+  getListLeaveRequests : "admin/students/leave-requests", // API đơn xin nghỉ học 
+  getListStudentDropList : "admin/students/list",
+  createLeaveRequest : "admin/students/leave-requests",
+  deleteLeaveRequest : "admin/students/leave-requests/",
 };
 
 const getListStudents = (params) => {
@@ -71,6 +75,39 @@ const updateStudentScore = ({ id, data }) => {
   });
 };
 
+const getListLeaveRequests = (params) => {
+  return fetcher({
+    url: path.getListLeaveRequests,
+    method: "GET",
+    params: {
+      ...params,
+      filter: JSON.stringify(params.filter),
+    },
+  });
+};
+
+const getListStudentDropList = () => {
+  return fetcher({
+    url: path.getListStudentDropList,
+    method: "GET",
+  });
+}
+
+const createLeaveRequest = (data) => {
+  return fetcher({
+    url: path.createLeaveRequest,
+    method: "POST",
+    data,
+  });
+};
+
+const deleteLeaveRequest = (id) => {
+  return fetcher({
+    url: path.deleteLeaveRequest + id,
+    method: "DELETE",
+  });
+}
+
 export {
   getListStudents,
   getStudentById,
@@ -79,4 +116,8 @@ export {
   deleteStudent,
   getListStudentScore,
   updateStudentScore,
+  getListLeaveRequests,
+  getListStudentDropList,
+  createLeaveRequest,
+  deleteLeaveRequest,
 };

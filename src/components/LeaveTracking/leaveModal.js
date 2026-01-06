@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from "react";
-import { notificationSuccess } from "notification/notification";
+import React, { useState } from "react";
 
 function getTodayISO() {
   const d = new Date();
@@ -9,34 +8,12 @@ function getTodayISO() {
   return `${y}-${m}-${day}`;
 }
 
-export default function LeaveModal({
-  isOpen,
-  onClose,
-  onSave,
-  students,
-  initialData,
-}) {
+export default function LeaveModal({ isOpen, onClose, onSave, students }) {
   const [form, setForm] = useState({
     userId: "",
     date: getTodayISO(),
     reason: "",
   });
-
-  useEffect(() => {
-    if (initialData) {
-      setForm({
-        userId: String(initialData.userId || ""),
-        date: initialData.date || getTodayISO(),
-        reason: initialData.reason || "",
-      });
-    } else {
-      setForm({
-        userId: "",
-        date: getTodayISO(),
-        reason: "",
-      });
-    }
-  }, [initialData, isOpen]);
 
   if (!isOpen) return null;
 
@@ -46,19 +23,21 @@ export default function LeaveModal({
 
   const handleSaveClick = () => {
     onSave(form);
-    initialData
-      ? notificationSuccess("Đã cập nhật thành công")
-      : notificationSuccess("Thêm mới thành công");
+    setForm({
+      userId: "",
+      date: getTodayISO(),
+      reason: "",
+    });
   };
 
-  const title = initialData
-    ? "Sửa ngày nghỉ của học viên"
-    : "Thêm ngày nghỉ cho học viên";
+  const title = "Thêm ngày nghỉ cho học viên";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl">
-        <h2 className="mb-4 text-lg font-semibold">{title}</h2>
+        <h2 className="mb-4 text-lg font-semibold uppercase text-center">
+          {title}
+        </h2>
 
         <div className="space-y-4 text-sm">
           <div>
@@ -70,8 +49,8 @@ export default function LeaveModal({
             >
               <option value="">-- Chọn học viên --</option>
               {students.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.fullName} ({u.code}) - {u.grade}
+                <option key={u.u_id} value={u.u_id}>
+                  {u.u_username} ({u.s_code}) - {u.s_grade}
                 </option>
               ))}
             </select>
