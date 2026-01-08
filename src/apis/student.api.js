@@ -6,12 +6,15 @@ const path = {
   createStudent: "admin/students",
   updateStudent: "admin/students/",
   deleteStudent: "admin/users/lock",
-  getListStudentScore : "admin/students/scores", //API điểm học sinh
-  updateStudentScore : "admin/students/scores/",
-  getListLeaveRequests : "admin/students/leave-requests", // API đơn xin nghỉ học 
-  getListStudentDropList : "admin/students/list",
-  createLeaveRequest : "admin/students/leave-requests",
-  deleteLeaveRequest : "admin/students/leave-requests/",
+  getListStudentScore: "admin/students/scores", //API điểm học sinh
+  updateStudentScore: "admin/students/scores/",
+  getListLeaveRequests: "admin/students/leave-requests", // API đơn xin nghỉ học
+  getListStudentDropList: "admin/students/list",
+  createLeaveRequest: "admin/students/leave-requests",
+  deleteLeaveRequest: "admin/students/leave-requests/",
+  getListStudentTrial: "admin/students/list-trial", // API lấy học sinh học trải nghiệm
+  createTrialFeedback: "admin/students/trial-feedback",
+  updateTrialStudent: "admin/students/trial-student/",
 };
 
 const getListStudents = (params) => {
@@ -52,7 +55,7 @@ const deleteStudent = (id) => {
   return fetcher({
     url: path.deleteStudent,
     method: "PUT",
-    data: { userId: [id], status : 7 },
+    data: { userId: [id], status: 7 },
   });
 };
 
@@ -62,14 +65,14 @@ const getListStudentScore = ({ term, grade }) => {
     method: "GET",
     params: {
       term,
-      grade
+      grade,
     },
   });
-}
+};
 
 const updateStudentScore = ({ id, data }) => {
   return fetcher({
-    url: path.updateStudentScore + id,  
+    url: path.updateStudentScore + id,
     method: "PUT",
     data,
   });
@@ -91,7 +94,7 @@ const getListStudentDropList = () => {
     url: path.getListStudentDropList,
     method: "GET",
   });
-}
+};
 
 const createLeaveRequest = (data) => {
   return fetcher({
@@ -106,7 +109,33 @@ const deleteLeaveRequest = (id) => {
     url: path.deleteLeaveRequest + id,
     method: "DELETE",
   });
-}
+};
+
+const getListStudentTrial = (params) => {
+  return fetcher({
+    url: path.getListStudentTrial,
+    method: "GET",
+    params: {
+      ...params,
+      filter: JSON.stringify(params.filter),
+    },
+  });
+};
+
+const createTrialFeedback = (data) => {
+  return fetcher({
+    url: path.createTrialFeedback,
+    method: "POST",
+    data,
+  });
+};
+
+const updateTrialStudent = (enrollmentId) => {
+  return fetcher({
+    url: path.updateTrialStudent + enrollmentId,
+    method: "PUT",
+  });
+};
 
 export {
   getListStudents,
@@ -120,4 +149,7 @@ export {
   getListStudentDropList,
   createLeaveRequest,
   deleteLeaveRequest,
+  getListStudentTrial,
+  createTrialFeedback,
+  updateTrialStudent
 };

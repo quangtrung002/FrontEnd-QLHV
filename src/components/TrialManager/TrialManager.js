@@ -1,139 +1,148 @@
-import React, { useMemo, useState } from "react";
-import usersData from "data-user";
+import React, { useReducer, useState } from "react";
 import Pagination from "services/pagination";
 import TrialTable from "./TrialTable";
 import TrialFeedbackModal from "./TrialFeedbackModal";
 import ConfirmModal from "./ConfirmModal";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  createTrialFeedback,
+  getListStudentTrial,
+  updateTrialStudent,
+} from "apis/student.api";
+import useDebounce from "services/useDebounce";
+import {
+  notificationError,
+  notificationSuccess,
+} from "notification/notification";
 
 const ITEMS_PER_PAGE = 10;
 
-export default function TrialManager() {
-  const [users, setUsers] = useState(usersData);
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
-  const [sortConfig, setSortConfig] = useState({ key: "id", direction: "asc" });
-
-  const [feedbackModal, setFeedbackModal] = useState({
+const initialModalState = {
+  feedback: {
     isOpen: false,
-    userId: null,
-    studentName: "",
-    session: 0,
-    currentData: null,
-  });
-
-  const [confirmModal, setConfirmModal] = useState({
+    data: null,
+  },
+  confirm: {
     isOpen: false,
     user: null,
+  },
+};
+
+function modalReducer(state, action) {
+  switch (action.type) {
+    case "OPEN_FEEDBACK":
+      return { ...state, feedback: { isOpen: true, data: action.payload } };
+    case "CLOSE_FEEDBACK":
+      return { ...state, feedback: { isOpen: false, data: null } };
+    case "OPEN_CONFIRM":
+      return { ...state, confirm: { isOpen: true, user: action.payload } };
+    case "CLOSE_CONFIRM":
+      return { ...state, confirm: { isOpen: false, user: null } };
+    default:
+      return state;
+  }
+}
+
+export default function TrialManager() {
+  const queryClient = useQueryClient();
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [isSortAsc, setIsSortAsc] = useState(true);
+  const [modal, dispatchModal] = useReducer(modalReducer, initialModalState);
+
+  const debouncedSearch = useDebounce(search.trim(), 800);
+
+  const { data: response, isLoading } = useQuery({
+    queryKey: ["listStudentTrial", { search: debouncedSearch, sort: isSortAsc }],
+    queryFn: () =>
+      getListStudentTrial({
+        sort: isSortAsc ? "id" : "-id",
+        search: debouncedSearch,
+      }),
+    keepPreviousData: true,
+    refetchOnWindowFocus: false,
   });
 
-  const processedUsers = useMemo(() => {
-    let result = users.filter((u) => u.status === "Trải nghiệm");
+  const studentTrials = response?.data || [];
 
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      result = result.filter(
-        (u) =>
-          u.fullName.toLowerCase().includes(q) ||
-          u.code.toLowerCase().includes(q)
-      );
-    }
+  const invalidateAll = () => {
+    queryClient.invalidateQueries({ queryKey: ["listStudentTrial"] });
+    queryClient.invalidateQueries({ queryKey: ["getListStudents"] });
+  };
 
-    result.sort((a, b) => {
-      if (a[sortConfig.key] < b[sortConfig.key]) {
-        return sortConfig.direction === "asc" ? -1 : 1;
+  const { mutate: createFeedback } = useMutation({
+    mutationFn: createTrialFeedback,
+    onSuccess: (res) => {
+      if (res.success) {
+        notificationSuccess("Đã thêm nhận xét!");
+        invalidateAll();
+        dispatchModal({ type: "CLOSE_FEEDBACK" });
       }
-      if (a[sortConfig.key] > b[sortConfig.key]) {
-        return sortConfig.direction === "asc" ? 1 : -1;
+    },
+    onError: (err) => notificationError(err.msg),
+  });
+
+  const { mutate: updateOfficial } = useMutation({
+    mutationFn: updateTrialStudent,
+    onSuccess: (res) => {
+      if (res.success) {
+        notificationSuccess("Đã chuyển thành công!");
+        invalidateAll();
+        dispatchModal({ type: "CLOSE_CONFIRM" });
       }
-      return 0;
-    });
-
-    return result;
-  }, [users, search, sortConfig]);
-
-  const totalItems = processedUsers.length;
-  const totalPages =
-    totalItems > 0 ? Math.ceil(totalItems / ITEMS_PER_PAGE) : 1;
-  const currentPage = Math.min(page, totalPages);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const pageUsers = processedUsers.slice(
-    startIndex,
-    startIndex + ITEMS_PER_PAGE
-  );
+    },
+    onError: (err) => notificationError(err.msg),
+  });
 
   const handleSearchChange = (e) => {
     setSearch(e.target.value);
     setPage(1);
   };
 
-  const handleSort = (key) => {
-    let direction = "asc";
-    if (sortConfig.key === key && sortConfig.direction === "asc") {
-      direction = "desc";
-    }
-    setSortConfig({ key, direction });
-  };
+  const handleSort = () => setIsSortAsc((prev) => !prev);
 
   const handleOpenFeedback = (user, sessionNum) => {
-    const existingData = user.trialFeedbacks?.find(
-      (f) => f.session === sessionNum
-    );
-    setFeedbackModal({
-      isOpen: true,
-      userId: user.id,
-      studentName: user.fullName,
-      session: sessionNum,
-      currentData: existingData || null,
+    dispatchModal({
+      type: "OPEN_FEEDBACK",
+      payload: {
+        enrollmentId: user.enrollmentId,
+        userId: user.studentId,
+        username: user.username,
+        session: sessionNum,
+        currentData: user.trialFeedbacks?.find((f) => f.session === sessionNum),
+      },
     });
   };
 
-  const handleSaveFeedback = ({ userId, session, date, comment }) => {
-    setUsers((prev) =>
-      prev.map((u) => {
-        if (u.id !== userId) return u;
-
-        const oldFeedbacks = u.trialFeedbacks || [];
-        const otherFeedbacks = oldFeedbacks.filter(
-          (f) => f.session !== session
-        );
-
-        const newFeedbacks = [
-          ...otherFeedbacks,
-          { session, date, comment },
-        ].sort((a, b) => a.session - b.session);
-
-        return { ...u, trialFeedbacks: newFeedbacks };
-      })
-    );
-    setFeedbackModal((prev) => ({ ...prev, isOpen: false }));
-  };
-
-  const handleRequestOfficial = (user) => {
-    setConfirmModal({
-      isOpen: true,
-      user: user,
+  const handleSaveFeedback = ({ enrollmentId, session, comment, date }) => {
+    createFeedback({
+      enrollmentId,
+      sessionNumber: +session,
+      learningDate: date,
+      comment,
     });
   };
 
   const handleConfirmOfficial = () => {
-    const targetUser = confirmModal.user;
-    if (!targetUser) return;
-
-    setUsers((prev) =>
-      prev.map((u) => {
-        if (u.id === targetUser.id) {
-          return {
-            ...u,
-            status: "Chính thức",
-            trialFeedbacks: [],
-          };
-        }
-        return u;
-      })
-    );
-
-    setConfirmModal({ isOpen: false, user: null });
+    const target = modal.confirm.user;
+    if (target) updateOfficial(target.enrollmentId);
   };
+
+  const totalItems = studentTrials.length;
+  const totalPages =
+    totalItems > 0 ? Math.ceil(totalItems / ITEMS_PER_PAGE) : 1;
+  const currentPage = Math.min(page, totalPages);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const pageUsers = studentTrials.slice(
+    startIndex,
+    startIndex + ITEMS_PER_PAGE
+  );
+
+  if (isLoading) {
+    return (
+      <div className="p-8 text-center text-slate-500">Đang tải dữ liệu...</div>
+    );
+  }
 
   return (
     <div className="w-full space-y-6">
@@ -141,54 +150,54 @@ export default function TrialManager() {
         Quản lý học viên trải nghiệm
       </h1>
 
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <input
-            type="text"
-            value={search}
-            onChange={handleSearchChange}
-            className="h-10 w-64 rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-            placeholder="Tìm theo tên hoặc mã học viên..."
-          />
-        </div>
+      <div className="flex justify-between items-center gap-4">
+        <input
+          type="text"
+          value={search}
+          onChange={handleSearchChange}
+          className="h-10 w-64 rounded-lg border border-slate-300 px-3 text-sm outline-none"
+          placeholder="Tìm theo tên hoặc mã học viên..."
+        />
         <div className="text-sm text-slate-600">
-          Tổng số: <span className="font-bold text-blue-600">{totalItems}</span>{" "}
-          học viên
+          Tổng số:{" "}
+          <span className="font-bold text-blue-600">{totalItems}</span> học viên
         </div>
       </div>
 
       <TrialTable
         data={pageUsers}
         startIndex={startIndex}
-        sortConfig={sortConfig}
         onSort={handleSort}
         onOpenFeedback={handleOpenFeedback}
-        onConfirmOfficial={handleRequestOfficial}
+        onConfirmOfficial={(user) =>
+          dispatchModal({ type: "OPEN_CONFIRM", payload: user })
+        }
       />
 
       <Pagination
         totalItems={totalItems}
         itemsPerPage={ITEMS_PER_PAGE}
         currentPage={currentPage}
-        onPageChange={setPage}
         itemLabel="học viên"
+        onPageChange={setPage}
       />
 
       <TrialFeedbackModal
-        isOpen={feedbackModal.isOpen}
-        data={feedbackModal}
-        onClose={() => setFeedbackModal((prev) => ({ ...prev, isOpen: false }))}
+        isOpen={modal.feedback.isOpen}
+        data={modal.feedback.data}
+        onClose={() => dispatchModal({ type: "CLOSE_FEEDBACK" })}
         onSave={handleSaveFeedback}
       />
 
       <ConfirmModal
-        isOpen={confirmModal.isOpen}
-        onClose={() => setConfirmModal({ isOpen: false, user: null })}
+        isOpen={modal.confirm.isOpen}
+        user={modal.confirm.user}
+        onClose={() => dispatchModal({ type: "CLOSE_CONFIRM" })}
         onConfirm={handleConfirmOfficial}
         title="Xác nhận chuyển chính thức"
         message={
-          confirmModal.user
-            ? `Bạn có chắc chắn muốn chuyển học viên "${confirmModal.user.fullName}" sang trạng thái Chính thức không?`
+          modal.confirm.user
+            ? `Chuyển học viên "${modal.confirm.user.username}" sang chính thức?`
             : ""
         }
         confirmLabel="Chuyển ngay"

@@ -1,4 +1,4 @@
-import { notificationSuccess } from "notification/notification";
+import { notificationError } from "notification/notification";
 import React, { useEffect, useState } from "react";
 
 export default function TrialFeedbackModal({ isOpen, onClose, onSave, data }) {
@@ -15,27 +15,28 @@ export default function TrialFeedbackModal({ isOpen, onClose, onSave, data }) {
   if (!isOpen || !data) return null;
 
   const handleSave = () => {
-    if (!comment.trim()) {
-      alert("Vui lòng nhập nội dung nhận xét.");
+    if (!comment.trim() || !date) {
+      notificationError("Vui lòng nhập nội dung nhận xét.");
       return;
     }
     onSave({
+      enrollmentId: data.enrollmentId,
       userId: data.userId,
       session: data.session,
       date,
       comment,
     });
-    notificationSuccess("Đã lưu đánh giá thành công!");
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-        <h2 className="mb-2 text-lg font-bold text-slate-800">
+        <h2 className="mb-2 text-lg font-bold text-slate-800 uppercase">
           Đánh giá Buổi {data.session}
         </h2>
         <p className="mb-4 text-sm text-slate-500">
-          Học viên: <span className="font-semibold text-slate-700">{data.studentName}</span>
+          Học viên:{" "}
+          <span className="font-semibold text-slate-700">{data.username}</span>
         </p>
 
         <div className="space-y-4">

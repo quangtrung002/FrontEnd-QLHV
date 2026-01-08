@@ -1,71 +1,16 @@
 import React from "react";
+import { renderSortIcon } from "services/render_icon";
 import TdGrade from "services/tdGrade";
 
 export default function TrialTable({
   data,
   startIndex,
-  sortConfig,
   onSort,
   onOpenFeedback,
   onConfirmOfficial,
 }) {
   const getSessionData = (user, sessionNum) => {
-    return user.trialFeedbacks?.find((f) => f.session === sessionNum);
-  };
-
-  const renderSortIcon = () => {
-    if (sortConfig.key !== "id") {
-      return (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-3 w-3 text-slate-400"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
-          />
-        </svg>
-      );
-    }
-    if (sortConfig.direction === "asc") {
-      return (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-3 w-3 text-blue-600"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M5 15l7-7 7 7"
-          />
-        </svg>
-      );
-    }
-    return (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="h-3 w-3 text-blue-600"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M19 9l-7 7-7-7"
-        />
-      </svg>
-    );
+    return user.feedbacks?.find((f) => f.session === sessionNum);
   };
 
   return (
@@ -75,7 +20,7 @@ export default function TrialTable({
           <tr>
             <th
               className="border px-3 py-3 text-center w-16 cursor-pointer hover:bg-slate-200 transition select-none"
-              onClick={() => onSort("id")}
+              onClick={onSort}
             >
               <div className="flex items-center justify-center gap-1">
                 <span>STT</span>
@@ -104,13 +49,13 @@ export default function TrialTable({
             </tr>
           ) : (
             data.map((user, index) => (
-              <tr key={user.id} className="hover:bg-slate-50">
+              <tr key={user.studentId} className="hover:bg-slate-50">
                 <td className="border px-3 py-2 text-center text-slate-500">
-                  {user.id}
+                  {index + 1}
                 </td>
                 <td className="border px-3 py-2">
                   <div className="font-semibold text-slate-800">
-                    {user.fullName}
+                    {user.username}
                   </div>
                   <div className="text-xs text-slate-500">{user.code}</div>
                 </td>
