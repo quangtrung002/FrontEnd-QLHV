@@ -1,11 +1,11 @@
 import { fetcher } from "./fetcher";
 
 const path = {
-  getListStudents: "admin/users",
-  getStudentById: "admin/users/",
+  getListStudents: "admin/students",
+  getStudentById: "admin/students/",
   createStudent: "admin/students",
   updateStudent: "admin/students/",
-  deleteStudent: "admin/users/lock",
+  deleteStudent: "admin/students/",
   getListStudentScore: "admin/students/scores", //API điểm học sinh
   updateStudentScore: "admin/students/scores/",
   getListLeaveRequests: "admin/students/leave-requests", // API đơn xin nghỉ học
@@ -53,9 +53,8 @@ const updateStudent = ({ id, data }) => {
 
 const deleteStudent = (id) => {
   return fetcher({
-    url: path.deleteStudent,
-    method: "PUT",
-    data: { userId: [id], status: 7 },
+    url: path.deleteStudent + id,
+    method: "DELETE",
   });
 };
 
@@ -151,5 +150,5 @@ export {
   deleteLeaveRequest,
   getListStudentTrial,
   createTrialFeedback,
-  updateTrialStudent
+  updateTrialStudent,
 };

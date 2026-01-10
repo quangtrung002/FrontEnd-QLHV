@@ -1,5 +1,8 @@
+import { useQuery } from "@tanstack/react-query";
+import { getListTeachers } from "apis/teacher.api";
 import { notificationSuccess } from "notification/notification";
 import React, { useEffect, useState } from "react";
+import { GRADE } from "services/tdGrade";
 
 const DEFAULT_AVATAR = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
@@ -13,11 +16,13 @@ const initialForm = {
   dob: "",
   fatherName: "",
   motherName: "",
-  active: "CT",
+  studentStatus: "CT",
   address: "",
   fatherPhone: "",
   motherPhone: "",
   referrer: "",
+  gender : "Male",
+  assignedTeacherId: null,
 };
 
 export default function StudentModal({
@@ -29,30 +34,37 @@ export default function StudentModal({
 }) {
   const [form, setForm] = useState(initialForm);
   const [currentMode, setCurrentMode] = useState("view");
+  const { data: response, isLoading } = useQuery({
+    queryKey: ["listTeacher"],
+    queryFn: getListTeachers,
+  });
+  const teachers = response?.data || [];
 
   useEffect(() => {
     if (isOpen) {
       if (user && mode !== "create") {
-        const profile = user.studentProfile || {};
-
+        const student = user.student;
         setForm({
           id: user.id,
-          username: user.username || "",
-          email: user.email || "",
-          avatarURL: user.avatarURL || "",
-          code: profile.code || "",
-          grade: profile.grade || "",
-          dob: profile.dob ? profile.dob.split("T")[0] : "",
-          address: profile.address || "",
-          fatherName: profile.fatherName || "",
-          motherName: profile.motherName || "",
-          fatherPhone: profile.fatherPhone || "",
-          motherPhone: profile.motherPhone || "",
-          referrer: profile.referrer || "",
-          active: profile.active || "CT",
-          school: profile.school || "",
-          gender: profile.gender || "Male",
-          createdAt: user.createdAt.split("T")[0] || "",
+          username: student.username || "",
+          email: student.email || "",
+          avatarURL: student.avatarURL || "",
+          code: student.studentProfile.code || "",
+          grade: user.grade || "",
+          dob: student.studentProfile.dob
+            ? student.studentProfile.dob.split("T")[0]
+            : "",
+          address: student.studentProfile.address || "",
+          fatherName: student.studentProfile.fatherName || "",
+          motherName: student.studentProfile.motherName || "",
+          fatherPhone: student.studentProfile.fatherPhone || "",
+          motherPhone: student.studentProfile.motherPhone || "",
+          referrer: student.studentProfile.referrer || "",
+          studentStatus: user.studentStatus || "CT",
+          school: student.studentProfile.school || "",
+          gender: student.studentProfile.gender || "Male",
+          createdAt: student.createdAt.split("T")[0] || "",
+          assignedTeacherId: `${user.assignedTeacherId}`,
         });
         setCurrentMode(mode);
       } else {
@@ -95,6 +107,8 @@ export default function StudentModal({
   }
 
   const isDisabled = currentMode === "view";
+
+  if (isLoading) return;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 animate-fade-in">
@@ -188,8 +202,10 @@ export default function StudentModal({
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none disabled:bg-slate-100 disabled:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
             >
               <option value="">Chọn khối</option>
-              {[3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((g) => (
-                <option key={g} value={`Lớp ${g}`}>{`Lớp ${g}`}</option>
+              {GRADE.map((g) => (
+                <option key={g} value={g}>
+                  {g}
+                </option>
               ))}
             </select>
           </div>
@@ -199,7 +215,7 @@ export default function StudentModal({
               Giới tính <span className="text-red-500">*</span>
             </label>
             <select
-              value={form.gender || ""}
+              value={form.gender || "Male"}
               onChange={(e) => handleChange("gender", e.target.value)}
               disabled={isDisabled}
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none disabled:bg-slate-100 disabled:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
@@ -233,6 +249,27 @@ export default function StudentModal({
               disabled={isDisabled}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none disabled:bg-slate-100 disabled:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
             />
+          </div>
+
+          <div>
+            <label className="mb-1 block font-medium text-slate-700">
+              Thầy/cô phụ trách <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={form.assignedTeacherId || ""}
+              onChange={(e) =>
+                handleChange("assignedTeacherId", e.target.value)
+              }
+              disabled={isDisabled}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none disabled:bg-slate-100 disabled:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+            >
+              <option value="">Thầy/cô phụ trách</option>
+              {teachers.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.username}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>
@@ -302,11 +339,11 @@ export default function StudentModal({
 
           <div>
             <label className="mb-1 block font-medium text-slate-700">
-              Trạng thái
+              Trạng thái <span className="text-red-500">*</span>
             </label>
             <select
-              value={form.active || "CT"}
-              onChange={(e) => handleChange("active", e.target.value)}
+              value={form.studentStatus || "CT"}
+              onChange={(e) => handleChange("studentStatus", e.target.value)}
               disabled={isDisabled}
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none disabled:bg-slate-100 disabled:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
             >

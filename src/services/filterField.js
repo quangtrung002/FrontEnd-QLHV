@@ -1,7 +1,6 @@
 const USER_FIELDS = ["username", "email", "phone", "avatarURL"];
 const PROFILE_FIELDS = [
   "code",
-  "grade",
   "school",
   "gender",
   "dob",
@@ -11,8 +10,8 @@ const PROFILE_FIELDS = [
   "motherName",
   "motherPhone",
   "referrer",
-  "active",
 ];
+const ENROLLMEN_FIELDS = ["grade", "assignedTeacherId", "studentStatus"];
 const pickFields = (source, fields) =>
   fields.reduce((acc, key) => {
     if (source[key] !== undefined && source[key] !== "") {
@@ -21,4 +20,4 @@ const pickFields = (source, fields) =>
     return acc;
   }, {});
 
-export { pickFields , USER_FIELDS, PROFILE_FIELDS };
+export { pickFields, USER_FIELDS, PROFILE_FIELDS, ENROLLMEN_FIELDS };

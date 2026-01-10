@@ -1,25 +1,7 @@
 import React, { memo } from "react";
 import TdGrade from "./tdGrade";
 
-const SortIcon = ({ active, direction }) => {
-  if (!active) {
-    return (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="h-3 w-3 text-slate-300"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
-        />
-      </svg>
-    );
-  }
+const SortIcon = ({isSort}) => {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -32,20 +14,13 @@ const SortIcon = ({ active, direction }) => {
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeWidth={2}
-        d={direction === "asc" ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"}
+        d={isSort ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"}
       />
     </svg>
   );
 };
 
-const StudentTable = ({
-  rows,
-  sortConfig,
-  onSort,
-  onView,
-  onEdit,
-  onDelete,
-}) => {
+const StudentTable = ({ rows, isSort, onSort, onView, onEdit, onDelete }) => {
   return (
     <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
       <table className="min-w-full text-sm">
@@ -53,15 +28,12 @@ const StudentTable = ({
           <tr>
             <th
               className="group w-16 cursor-pointer select-none border px-3 py-3 text-center transition hover:bg-slate-200"
-              onClick={() => onSort && onSort("id")}
+              onClick={onSort}
               title="Sắp xếp theo ID"
             >
               <div className="flex items-center justify-center gap-1">
                 <span>STT</span>
-                <SortIcon
-                  active={sortConfig?.key === "id"}
-                  direction={sortConfig?.direction}
-                />
+                <SortIcon isSort={isSort} />
               </div>
             </th>
             <th className="border px-3 py-3 text-left">Mã định danh</th>
@@ -79,28 +51,27 @@ const StudentTable = ({
               </td>
             </tr>
           ) : (
-            rows.map((u) => {
-              const profile = u.studentProfile || {};
-              const isOfficial = profile.active === "CT"; 
+            rows.map((u, idx) => {
+              const isOfficial = u.status === "CT";
 
               return (
-                <tr key={u.id} className="transition hover:bg-slate-50">
+                <tr key={u.enrollmentId} className="transition hover:bg-slate-50">
                   <td className="border px-3 py-2 text-center text-slate-500">
-                    {u.id}
+                    {idx + 1}
                   </td>
                   <td className="border px-3 py-2 font-medium text-slate-700">
-                    {profile.code}
+                    {u.code}
                   </td>
                   <td className="border px-3 py-2">
                     <div className="font-semibold text-slate-800">
                       {u.username}
                     </div>
                     <div className="text-xs text-slate-500">
-                      PH: {profile.fatherName || profile.motherName} -{" "}
-                      {profile.fatherPhone || profile.motherPhone}
+                      PH: {u.fatherName || u.motherName} -{" "}
+                      {u.fatherPhone || u.motherPhone}
                     </div>
                   </td>
-                  <TdGrade str={profile.grade} cssInput="text-center" />
+                  <TdGrade str={u.grade} cssInput="text-center" />
                   <td className="border px-3 py-2 text-center">
                     <span
                       className={`inline-block rounded-full px-2 py-1 text-xs font-semibold ${
@@ -127,7 +98,7 @@ const StudentTable = ({
                         Sửa
                       </button>
                       <button
-                        onClick={() => onDelete(u.id)}
+                        onClick={() => onDelete(u.enrollmentId)}
                         className="rounded bg-rose-100 px-2 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-200"
                       >
                         Xóa

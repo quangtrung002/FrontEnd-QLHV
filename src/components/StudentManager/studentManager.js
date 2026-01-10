@@ -16,7 +16,13 @@ import {
   notificationSuccess,
   notificationError,
 } from "notification/notification";
-import { pickFields, PROFILE_FIELDS, USER_FIELDS } from "services/filterField";
+import {
+  ENROLLMEN_FIELDS,
+  pickFields,
+  PROFILE_FIELDS,
+  USER_FIELDS,
+} from "services/filterField";
+import { GRADE } from "services/tdGrade";
 
 const ITEMS_PER_PAGE = 15;
 
@@ -28,32 +34,9 @@ export default function StudentManager() {
   const [selectedId, setSelectedId] = useState(null);
   const [gradeFilterControl, setGradeFilterControl] = useState("");
   const [statusFilterControl, setStatusFilterControl] = useState("");
-  const [filters, setFilters] = useState({ role: "Student" });
+  const [filters, setFilters] = useState({});
   const [isSort, setIsSort] = useState(true);
   const debouncedSearch = useDebounce(search.trim());
-
-  const handleSort = (key) => {
-    setIsSort(!isSort);
-  };
-
-  const handleOpenCreate = () => {
-    setModalState({ isOpen: true, user: null, mode: "create" });
-  };
-
-  const handleOpenView = (user) => {
-    setSelectedId(user.id);
-    setModalState({ isOpen: true, user: null, mode: "view" });
-  };
-
-  const handleOpenEdit = (user) => {
-    setSelectedId(user.id);
-    setModalState({ isOpen: true, user: null, mode: "edit" });
-  };
-
-  const handleCloseModal = () => {
-    setSelectedId(null);
-    setModalState((prev) => ({ ...prev, isOpen: false, user: null }));
-  };
 
   const { data: response, isLoading } = useQuery({
     queryKey: ["getListStudents", page, debouncedSearch, filters, isSort],
@@ -61,12 +44,7 @@ export default function StudentManager() {
       getListStudents({
         filter: filters,
         search: debouncedSearch,
-        searchFields: [
-          "username",
-          "studentProfile.fatherName",
-          "studentProfile.motherName",
-          "studentProfile.code",
-        ],
+        searchFields: ["student.username", "profile.code"],
         limit: ITEMS_PER_PAGE,
         page: page,
         sort: isSort ? "id" : "-id",
@@ -74,7 +52,7 @@ export default function StudentManager() {
     keepPreviousData: true,
   });
 
-  const { data: studentDetail, isFetching: isFetchingDetail } = useQuery({
+  const { data: studentDetail } = useQuery({
     queryKey: ["getStudentById", selectedId],
     queryFn: () => getStudentById(selectedId),
     enabled: !!selectedId,
@@ -129,12 +107,33 @@ export default function StudentManager() {
     setPage(newPage);
   };
 
+  const handleSort = () => {
+    setIsSort(!isSort);
+  };
+
+  const handleOpenCreate = () => {
+    setModalState({ isOpen: true, user: null, mode: "create" });
+  };
+
+  const handleOpenView = (user) => {
+    setSelectedId(user.enrollmentId);
+    setModalState({ isOpen: true, user: null, mode: "view" });
+  };
+
+  const handleOpenEdit = (user) => {
+    setSelectedId(user.enrollmentId);
+    setModalState({ isOpen: true, user: null, mode: "edit" });
+  };
+
+  const handleCloseModal = () => {
+    setSelectedId(null);
+    setModalState((prev) => ({ ...prev, isOpen: false, user: null }));
+  };
+
   const handleApplyFilter = () => {
-    const newFilters = { role: "Student" };
-    if (gradeFilterControl)
-      newFilters["studentProfile.grade"] = gradeFilterControl;
-    if (statusFilterControl)
-      newFilters["studentProfile.active"] = statusFilterControl;
+    const newFilters = {};
+    if (gradeFilterControl) newFilters["grade"] = gradeFilterControl;
+    if (statusFilterControl) newFilters["studentStatus"] = statusFilterControl;
 
     setFilters(newFilters);
     setPage(1);
@@ -144,10 +143,11 @@ export default function StudentManager() {
     try {
       const userPayload = pickFields(formData, USER_FIELDS);
       const profilePayload = pickFields(formData, PROFILE_FIELDS);
-
+      const enrollmentPayload = pickFields(formData, ENROLLMEN_FIELDS);
       const payload = {
-        ...userPayload,
-        studentProfile: profilePayload,
+        enrollment: enrollmentPayload,
+        student: userPayload,
+        profile: profilePayload,
       };
 
       if (modalState.mode === "edit") {
@@ -210,8 +210,10 @@ export default function StudentManager() {
             className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
           >
             <option value="">Khối</option>
-            {[3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((g) => (
-              <option key={g} value={`Lớp ${g}`}>{`Lớp ${g}`}</option>
+            {GRADE.map((g) => (
+              <option key={g} value={g}>
+                {g}
+              </option>
             ))}
           </select>
 
@@ -247,7 +249,7 @@ export default function StudentManager() {
       <StudentTable
         rows={listStudents}
         startIndex={startIndex}
-        sortConfig={{ key: "id", direction: isSort ? "asc" : "desc" }}
+        isSort={isSort}
         onSort={handleSort}
         onView={handleOpenView}
         onEdit={handleOpenEdit}
