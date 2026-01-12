@@ -22,6 +22,7 @@ export default function LeaveModal({ isOpen, onClose, onSave, students }) {
   };
 
   const handleSaveClick = () => {
+    console.log(form)
     onSave(form);
     setForm({
       userId: "",
@@ -49,8 +50,8 @@ export default function LeaveModal({ isOpen, onClose, onSave, students }) {
             >
               <option value="">-- Chọn học viên --</option>
               {students.map((u) => (
-                <option key={u.u_id} value={u.u_id}>
-                  {u.u_username} ({u.s_code}) - {u.s_grade}
+                <option key={u.studentId } value={u.studentId }>
+                  {u.username} ({u.code}) - {u.grade}
                 </option>
               ))}
             </select>

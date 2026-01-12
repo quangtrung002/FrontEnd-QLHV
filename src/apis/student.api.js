@@ -8,10 +8,10 @@ const path = {
   deleteStudent: "admin/students/",
   getListStudentScore: "admin/students/scores", //API điểm học sinh
   updateStudentScore: "admin/students/scores/",
-  getListLeaveRequests: "admin/students/leave-requests", // API đơn xin nghỉ học
-  getListStudentDropList: "admin/students/list",
-  createLeaveRequest: "admin/students/leave-requests",
-  deleteLeaveRequest: "admin/students/leave-requests/",
+  getListLeaveRequests: "admin/students/leave/list", // API đơn xin nghỉ học
+  getListStudentDropList: "admin/students/leave/droplist",
+  createLeaveRequest: "admin/students/leave",
+  deleteLeaveRequest: "admin/students/leave/",
   getListStudentTrial: "admin/students/list-trial", // API lấy học sinh học trải nghiệm
   createTrialFeedback: "admin/students/trial-feedback",
   updateTrialStudent: "admin/students/trial-student/",
