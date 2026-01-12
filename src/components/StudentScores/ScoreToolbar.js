@@ -25,14 +25,6 @@ export default function ScoreToolbar({
           </select>
         </div>
 
-        <button
-          type="button"
-          // onClick={onApply}
-          className="inline-flex items-center gap-1 h-9 rounded-lg bg-red-600 px-4 text-xs font-semibold text-white hover:bg-blue-700 transition"
-        >
-          Xác nhận
-        </button>
-
         <div className="ml-2 flex items-center gap-2 pl-4 border-l border-slate-300">
           <span className="font-semibold">Lọc:</span>
           <select

@@ -1,12 +1,9 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import Pagination from "services/pagination";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-
 import ScoreToolbar from "./ScoreToolbar";
 import ScoreTable from "./ScoreTable";
 import ScoreEditModal from "./ScoreEditModal";
-
-
 import {
   notificationSuccess,
   notificationError,
@@ -20,26 +17,23 @@ export default function StudentScores() {
   const [filter, setFilter] = useState({
     grade: "",
     term: "1_2025_2026",
-  })
-  const [isSort, setIsSort] = useState(true)
-  
+  });
   const [page, setPage] = useState(1);
   const [editingRow, setEditingRow] = useState(null);
 
-  const { 
+  const {
     data: response,
-    isLoading, 
-    isError 
+    isLoading,
+    isError,
   } = useQuery({
-    queryKey: ["studentScores", filter],
-    queryFn: () => getListStudentScore({term: filter.term, grade: filter.grade}),
-    keepPreviousData: true,
-    refetchOnWindowFocus: false,
+    queryKey: ["studentScores", filter.term, filter.grade],
+    queryFn: () =>
+      getListStudentScore({ term: filter.term, grade: filter.grade }),
   });
 
   const students = response?.data || [];
 
-  const { mutateAsync : updateStudentScoreMutation } = useMutation({
+  const { mutateAsync: updateStudentScoreMutation } = useMutation({
     mutationFn: (data) => updateStudentScore(data),
     onSuccess: () => {
       notificationSuccess("Cập nhật điểm thành công!");
@@ -52,13 +46,22 @@ export default function StudentScores() {
   });
 
   const totalItems = students.length;
-  const totalPages = totalItems > 0 ? Math.ceil(totalItems / ITEMS_PER_PAGE) : 1;
+  const totalPages =
+    totalItems > 0 ? Math.ceil(totalItems / ITEMS_PER_PAGE) : 1;
   const safePage = Math.min(Math.max(page, 1), totalPages);
   const startIndex = (safePage - 1) * ITEMS_PER_PAGE;
   const pageRows = students.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   const calculateSummary = (mid, gita, final) => {
-    if (mid === "" || mid === null || gita === "" || gita === null || final === "" || final === null) return 0;
+    if (
+      mid === "" ||
+      mid === null ||
+      gita === "" ||
+      gita === null ||
+      final === "" ||
+      final === null
+    )
+      return 0;
     const val = (+mid + +gita + +final) / 3;
     return isNaN(val) ? 0 : val.toFixed(1);
   };
@@ -68,15 +71,16 @@ export default function StudentScores() {
       ...prev,
       [key]: val,
     }));
-  }
-
-  const handleSort = () => setIsSort(!isSort);
+  };
 
   const handleSaveScore = (updatedRow) => {
     if (
-      updatedRow.mid < 0 || updatedRow.mid > 10 ||
-      updatedRow.gita < 0 || updatedRow.gita > 10 ||
-      updatedRow.final < 0 || updatedRow.final > 10
+      updatedRow.mid < 0 ||
+      updatedRow.mid > 10 ||
+      updatedRow.gita < 0 ||
+      updatedRow.gita > 10 ||
+      updatedRow.final < 0 ||
+      updatedRow.final > 10
     ) {
       notificationError("Điểm số không hợp lệ (phải từ 0 - 10)");
       return;
@@ -92,7 +96,12 @@ export default function StudentScores() {
     });
   };
 
-  if (isError) return <div className="text-red-500 text-center mt-10">Lỗi không tải được dữ liệu!</div>;
+  if (isError)
+    return (
+      <div className="text-red-500 text-center mt-10">
+        Lỗi không tải được dữ liệu!
+      </div>
+    );
 
   return (
     <div className="w-full">
@@ -101,17 +110,18 @@ export default function StudentScores() {
       </h1>
 
       <ScoreToolbar
-        term ={filter.term}
+        term={filter.term}
         grade={filter.grade}
         handleChangeFilter={handleChangeFilter}
       />
 
       {isLoading ? (
-        <div className="text-center py-10 text-slate-500">Đang tải dữ liệu...</div>
+        <div className="text-center py-10 text-slate-500">
+          Đang tải dữ liệu...
+        </div>
       ) : (
         <ScoreTable
           rows={pageRows}
-          onSort={handleSort}
           onEdit={(row) => setEditingRow(row)}
           calculateSummary={calculateSummary}
         />

@@ -6,8 +6,8 @@ const path = {
   createStudent: "admin/students",
   updateStudent: "admin/students/",
   deleteStudent: "admin/students/",
-  getListStudentScore: "admin/students/scores", //API điểm học sinh
-  updateStudentScore: "admin/students/scores/",
+  getListStudentScore: "admin/score-student", //API điểm học sinh
+  updateStudentScore: "admin/score-student/",
   getListLeaveRequests: "admin/students/leave/list", // API đơn xin nghỉ học
   getListStudentDropList: "admin/students/leave/droplist",
   createLeaveRequest: "admin/students/leave",

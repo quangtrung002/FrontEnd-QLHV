@@ -1,55 +1,14 @@
 import React from "react";
 import TdGrade from "services/tdGrade"; // Giữ nguyên import của bạn
 
-export default function ScoreTable({ rows, onSort, onEdit, calculateSummary }) {
-  const renderSortIcon = () => {
-    return true ? (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="h-3 w-3 text-white"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M5 15l7-7 7 7"
-        />
-      </svg>
-    ) : (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="h-3 w-3 text-white"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M19 9l-7 7-7-7"
-        />
-      </svg>
-    );
-  };
-
+export default function ScoreTable({ rows, onEdit, calculateSummary }) {
   return (
     <div className="overflow-x-auto border border-slate-200 rounded-lg bg-white">
       <table className="min-w-full text-sm">
         <thead>
           <tr className="bg-blue-500 text-white text-xs">
-            <th
-              className="px-3 py-2 border-b border-blue-600 text-center cursor-pointer hover:bg-blue-600 select-none group w-16"
-              onClick={onSort}
-              title="Sắp xếp theo ID"
-            >
-              <div className="flex items-center justify-center gap-1">
-                <span>STT</span>
-                {renderSortIcon()}
-              </div>
+            <th className="px-3 py-2 border-b border-blue-600 text-center">
+              STT
             </th>
             <th className="px-3 py-2 border-b border-blue-600 text-left">
               Họ và tên
