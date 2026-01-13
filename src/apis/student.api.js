@@ -12,9 +12,10 @@ const path = {
   getListStudentDropList: "admin/students/leave/droplist",
   createLeaveRequest: "admin/students/leave",
   deleteLeaveRequest: "admin/students/leave/",
-  getListStudentTrial: "admin/students/list-trial", // API lấy học sinh học trải nghiệm
-  createTrialFeedback: "admin/students/trial-feedback",
-  updateTrialStudent: "admin/students/trial-student/",
+  getListStudentTrial: "admin/trial-student/list", // API lấy học sinh học trải nghiệm
+  getTrialFeedbackById: "admin/trial-student/",
+  createTrialFeedback: "admin/trial-student/feedback",
+  updateTrialStudent: "admin/trial-student/",
 };
 
 const getListStudents = (params) => {
@@ -121,6 +122,13 @@ const getListStudentTrial = (params) => {
   });
 };
 
+const getTrialFeedbackById = (enrollmentId, sessionNumber) => {
+  return fetcher({
+    url: path.getTrialFeedbackById + enrollmentId + "/" + sessionNumber,
+    method: "GET",
+  });
+};
+
 const createTrialFeedback = (data) => {
   return fetcher({
     url: path.createTrialFeedback,
@@ -151,4 +159,5 @@ export {
   getListStudentTrial,
   createTrialFeedback,
   updateTrialStudent,
+  getTrialFeedbackById,
 };

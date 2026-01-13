@@ -102,6 +102,7 @@ export default function TrialManager() {
   const handleSort = () => setIsSortAsc((prev) => !prev);
 
   const handleOpenFeedback = (user, sessionNum) => {
+    console.log(user)
     dispatchModal({
       type: "OPEN_FEEDBACK",
       payload: {
@@ -109,7 +110,7 @@ export default function TrialManager() {
         userId: user.studentId,
         username: user.username,
         session: sessionNum,
-        currentData: user.trialFeedbacks?.find((f) => f.session === sessionNum),
+        currentData: user.feedbacks?.find((f) => f.session === sessionNum),
       },
     });
   };
