@@ -16,6 +16,7 @@ const path = {
   getTrialFeedbackById: "admin/trial-student/",
   createTrialFeedback: "admin/trial-student/feedback",
   updateTrialStudent: "admin/trial-student/",
+  getOfficialStudentFeedback: "admin/official-student/feedback",
 };
 
 const getListStudents = (params) => {
@@ -144,6 +145,17 @@ const updateTrialStudent = (enrollmentId) => {
   });
 };
 
+const getOfficialStudentFeedback = (params) => {
+  return fetcher({
+    url: path.getOfficialStudentFeedback,
+    method: "GET",
+    params: {
+      ...params,
+      filter: JSON.stringify(params.filter),
+    },
+  });
+};
+
 export {
   getListStudents,
   getStudentById,
@@ -160,4 +172,5 @@ export {
   createTrialFeedback,
   updateTrialStudent,
   getTrialFeedbackById,
+  getOfficialStudentFeedback,
 };
