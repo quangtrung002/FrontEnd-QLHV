@@ -92,6 +92,7 @@ export default function StudentScores() {
         mid_score: updatedRow.mid === "" ? null : +updatedRow.mid,
         gita_score: updatedRow.gita === "" ? null : +updatedRow.gita,
         final_score: updatedRow.final === "" ? null : +updatedRow.final,
+        term : filter.term
       },
     });
   };
