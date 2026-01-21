@@ -6,7 +6,7 @@ export default function ScoreTable({ rows, onEdit, calculateSummary }) {
     <div className="overflow-x-auto border border-slate-200 rounded-lg bg-white">
       <table className="min-w-full text-sm">
         <thead>
-          <tr className="bg-blue-500 text-white text-xs">
+          <tr className="bg-blue-500 text-white text-xs uppercase">
             <th className="px-3 py-2 border-b border-blue-600 text-center">
               STT
             </th>

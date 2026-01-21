@@ -6,7 +6,7 @@ export default function LeaveTable({ pageLeaves, onDelete, onSort, isSort }) {
     <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
       <table className="min-w-full text-sm">
         <thead className="bg-slate-100">
-          <tr className="bg-blue-500 text-white text-xs">
+          <tr className="bg-blue-500 text-white text-xs uppercase">
             <th
               className="border px-3 py-2 text-center w-16 cursor-pointer select-none"
               onClick={onSort}

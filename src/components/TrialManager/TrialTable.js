@@ -16,8 +16,8 @@ export default function TrialTable({
   return (
     <div className="overflow-x-auto rounded-lg border bg-white shadow-sm">
       <table className="min-w-full text-sm">
-        <thead className="bg-slate-100 text-xs uppercase text-slate-600">
-          <tr>
+        <thead>
+          <tr className="bg-blue-500 text-white text-xs uppercase">
             <th
               className="border px-3 py-3 text-center w-16 cursor-pointer hover:bg-slate-200 transition select-none"
               onClick={onSort}
@@ -30,13 +30,13 @@ export default function TrialTable({
             <th className="border px-3 py-3 text-left min-w-[150px]">
               Học viên
             </th>
-            <th className="border px-3 py-3 text-center w-24">Khối</th>
-            <th className="border px-3 py-3 text-center w-32">Buổi 1</th>
-            <th className="border px-3 py-3 text-center w-32">Buổi 2</th>
-            <th className="border px-3 py-3 text-center w-32">Buổi 3</th>
-            <th className="border px-3 py-3 text-center w-32">Buổi 4</th>
-            <th className="border px-3 py-3 text-center min-w-[140px]">
-              Thao tác
+            <th className="border px-3 py-3 text-center w-28">Khối</th>
+            <th className="border px-3 py-3 text-center w-40">Buổi 1</th>
+            <th className="border px-3 py-3 text-center w-40">Buổi 2</th>
+            <th className="border px-3 py-3 text-center w-40">Buổi 3</th>
+            <th className="border px-3 py-3 text-center w-40">Buổi 4</th>
+            <th className="border px-3 py-3 text-center w-[150px] max-w-[200px]">
+              Action
             </th>
           </tr>
         </thead>
@@ -93,10 +93,10 @@ export default function TrialTable({
                   );
                 })}
 
-                <td className="border px-3 py-2 text-center">
+                <td className="border px-3 py-2">
                   <button
                     onClick={() => onConfirmOfficial(user)}
-                    className="flex items-center justify-center gap-1 rounded bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700 w-full"
+                    className="mx-auto flex w-[150px] items-center justify-center gap-1 rounded bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700"
                   >
                     <span>Chuyển CT</span>
                     <svg

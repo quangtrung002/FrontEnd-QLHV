@@ -25,7 +25,7 @@ const StudentTable = ({ rows, isSort, onSort, onView, onEdit, onDelete }) => {
     <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
       <table className="min-w-full text-sm">
         <thead className="bg-slate-100 text-xs uppercase text-slate-600">
-          <tr>
+          <tr className="bg-blue-500 text-white text-xs uppercase">
             <th
               className="group w-16 cursor-pointer select-none border px-3 py-3 text-center transition hover:bg-slate-200"
               onClick={onSort}
