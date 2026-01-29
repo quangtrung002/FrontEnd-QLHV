@@ -13,6 +13,7 @@ import LoginPage from "components/Login/login";
 import ProtectedRoute from "context/ProtectedRoute";
 import { ToastContainer } from "react-toastify";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import Setting from "components/Setting/setting";
 
 export default function App() {
   const queryClient = new QueryClient({
@@ -40,6 +41,7 @@ export default function App() {
               <Route path="/trial-management" element={<TrialManager />} />
               <Route path="/student-scores" element={<StudentScores />} />
               <Route path="/feedback" element={<Feedback />} />
+              <Route path="/setting" element={<Setting />} />
             </Route>
           </Route>
           <Route path="*" element={<NotFound />} />
