@@ -1,4 +1,4 @@
-import { notificationSuccess } from "notification/notification";
+import { notificationError } from "notification/notification";
 import React, { useState, useEffect } from "react";
 
 export default function AbsenceModal({ isOpen, onClose, onSave, teachers }) {
@@ -18,17 +18,10 @@ export default function AbsenceModal({ isOpen, onClose, onSave, teachers }) {
 
   const handleSubmit = () => {
     if (!formData.teacherId || !formData.date || !formData.reason) {
-      alert("Vui lòng nhập đầy đủ thông tin");
+      notificationError("Vui lòng nhập đầy đủ thông tin");
       return;
     }
-    const selectedTeacher = teachers.find(
-      (t) => String(t.id) === String(formData.teacherId)
-    );
-    onSave({
-      ...formData,
-      teacherName: selectedTeacher ? selectedTeacher.fullName : "",
-    });
-    notificationSuccess("Thêm mới ngày nghỉ thành công");
+    onSave(formData);
   };
 
   return (
@@ -47,13 +40,13 @@ export default function AbsenceModal({ isOpen, onClose, onSave, teachers }) {
               className="w-full rounded border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
               value={formData.teacherId}
               onChange={(e) =>
-                setFormData({ ...formData, teacherId: e.target.value })
+                setFormData({ ...formData, teacherId: +e.target.value })
               }
             >
               <option value="">-- Chọn giáo viên --</option>
               {teachers.map((t) => (
                 <option key={t.id} value={t.id}>
-                  {t.fullName}
+                  {t.username}
                 </option>
               ))}
             </select>

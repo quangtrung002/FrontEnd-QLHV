@@ -1,40 +1,33 @@
 import React, { useEffect, useState } from "react";
 
 const AVAILABLE_SHIFTS = [
-  "Ca 1: 08:00 - 09:30",
-  "Ca 2: 09:45 - 11:15",
-  "Ca 3: 14:00 - 15:30",
-  "Ca 4: 15:45 - 17:15",
-  "Ca 5: 17:30 - 19:00",
-  "Ca 6: 19:15 - 20:45",
-  "Ca 7: 18:15 - 19:45",
-  "Ca 8: 20:00 - 21:30",
+  "08:00-09:30",
+  "09:45-11:15",
+  "18:15-19:45",
+  "20:00-21:30",
 ];
 
+const initForm = {
+  username: "",
+  phone: "",
+  email: "",
+  shifts: [],
+};
+
 export default function TeacherModal({ isOpen, onClose, onSave, teacher }) {
-  const [form, setForm] = useState({
-    fullName: "",
-    phone: "",
-    email: "",
-    shifts: [],
-  });
+  const [form, setForm] = useState(initForm);
 
   useEffect(() => {
     if (isOpen) {
       if (teacher) {
         setForm({
-          fullName: teacher.fullName || "",
+          username: teacher.username || "",
           phone: teacher.phone || "",
           email: teacher.email || "",
           shifts: teacher.shifts || [],
         });
       } else {
-        setForm({
-          fullName: "",
-          phone: "",
-          email: "",
-          shifts: [],
-        });
+        setForm(initForm);
       }
     }
   }, [isOpen, teacher]);
@@ -57,10 +50,6 @@ export default function TeacherModal({ isOpen, onClose, onSave, teacher }) {
   };
 
   const handleSubmit = () => {
-    if (!form.fullName.trim()) {
-      alert("Vui lòng nhập tên giáo viên");
-      return;
-    }
     onSave(form);
   };
 
@@ -79,8 +68,8 @@ export default function TeacherModal({ isOpen, onClose, onSave, teacher }) {
               </label>
               <input
                 type="text"
-                value={form.fullName}
-                onChange={(e) => handleChange("fullName", e.target.value)}
+                value={form.username}
+                onChange={(e) => handleChange("username", e.target.value)}
                 className="w-full rounded border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 placeholder="Ví dụ: Nguyễn Văn A"
               />
@@ -88,7 +77,7 @@ export default function TeacherModal({ isOpen, onClose, onSave, teacher }) {
 
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-700">
-                Số điện thoại
+                Số điện thoại <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -100,12 +89,12 @@ export default function TeacherModal({ isOpen, onClose, onSave, teacher }) {
 
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-700">
-                Email
+                Email <span className="text-red-500">*</span>
               </label>
               <input
                 type="email"
                 value={form.email}
-                onChange={(e) => handleChange("email", e.target.value)}
+                readOnly
                 className="w-full rounded border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               />
             </div>
@@ -116,7 +105,7 @@ export default function TeacherModal({ isOpen, onClose, onSave, teacher }) {
               Đăng ký ca dạy cố định:
             </label>
             <div className="flex flex-col gap-2 max-h-60 overflow-y-auto pr-2">
-              {AVAILABLE_SHIFTS.map((shift) => (
+              {AVAILABLE_SHIFTS.map((shift, idx) => (
                 <label
                   key={shift}
                   className="flex items-center gap-2 rounded border border-slate-200 bg-white p-2 hover:bg-blue-50 cursor-pointer"
@@ -127,7 +116,9 @@ export default function TeacherModal({ isOpen, onClose, onSave, teacher }) {
                     onChange={() => handleShiftToggle(shift)}
                     className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                   />
-                  <span className="text-sm text-slate-700">{shift}</span>
+                  <span className="text-sm text-slate-700">{`Ca ${
+                    idx + 1
+                  }: ${shift}`}</span>
                 </label>
               ))}
             </div>

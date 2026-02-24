@@ -1,4 +1,3 @@
-import { notificationSuccess } from "notification/notification";
 import React from "react";
 
 export default function ConfirmModal({
@@ -31,10 +30,7 @@ export default function ConfirmModal({
             Hủy bỏ
           </button>
           <button
-            onClick={() => {
-              onConfirm();
-              notificationSuccess("Xóa thành công");
-            }}
+            onClick={onConfirm}
             className="rounded bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
           >
             Xóa
